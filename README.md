@@ -14,7 +14,9 @@
 
 ## API設計
 
-OpenAPI 3.0形式のAPI設計書は [api-schema.yaml](./api-schema.yaml) を参照してください。
+OpenAPI 3.0形式のAPI設計書は [api-schema.yaml](./api-schema.yaml) を参照してください。  
+
+※ https://editor.swagger.io/ から「File」→「Import URL」で、GitHubのrawファイルURLを指定することでSwaggerUIで閲覧可能です。
 
 ---
 
