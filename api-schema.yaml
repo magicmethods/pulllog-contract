@@ -1,0 +1,1525 @@
+openapi: 3.0.3
+info:
+  title: PullLog API
+  description: |
+    ガチャ履歴管理アプリ「PullLog」バックエンドAPI仕様
+  version: 0.9.0
+servers:
+  - url: https://api.pulllog.net
+    description: Production server
+
+paths:
+  /auth/login:
+    post:
+      summary: ユーザーログイン
+      description: |
+        メールアドレス・パスワードによるユーザー認証を行い、成功時にユーザー情報およびCSRFトークン等を返します。
+        Rememberオプションが有効な場合はRememberトークンも返却。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 認証エラー（メールアドレスまたはパスワード不正等）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '500':
+          description: サーバーエラー
+
+  /auth/logout:
+    post:
+      summary: ユーザーログアウト
+      description: |
+        サーバー側のセッションを消去し、ログアウト状態にします。
+        クライアント側ではユーザー・CSRFトークン・アプリ等のキャッシュも削除推奨。
+      responses:
+        '200':
+          description: ログアウト成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: 'Logged out successfully.'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                error:
+                  value:
+                    success: false
+                    message: 'Logout failed due to server error.'
+
+  /auth/register:
+    post:
+      summary: アカウント新規登録
+      description: |
+        ユーザー名・メールアドレス・パスワード・言語設定で新規ユーザーアカウントを登録します。
+        登録後、メール認証が完了するまでアカウントは無効状態となり、ログインは不可です。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 登録成功（メール認証待ち）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+              examples:
+                success:
+                  value:
+                    state: success
+                    message: 'Registration completed. Please verify your email.'
+        '400':
+          description: バリデーションエラー等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+              examples:
+                error:
+                  value:
+                    state: error
+                    message: 'Email already in use or invalid data.'
+
+  /auth/password:
+    post:
+      summary: パスワード再設定リクエスト
+      description: |
+        指定したメールアドレスにパスワード再設定用URL（認証コード付き）を送信します。
+        実際のパスワード再設定はメール経由で認証後に行います。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: パスワード再設定メール送信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: 'A password reset link has been sent to your email address.'
+        '404':
+          description: メールアドレスが登録されていない場合等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetResponse'
+              examples:
+                notfound:
+                  value:
+                    success: false
+                    message: 'No account found for this email address.'
+        '400':
+          description: バリデーションエラー等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetResponse'
+              examples:
+                invalid:
+                  value:
+                    success: false
+                    message: 'Invalid email address.'
+    put:
+      summary: パスワード再設定・確定
+      description: |
+        メールで送付された認証トークン・認証コード・新しいパスワードを受け取り、パスワードを更新します。
+        typeは "reset"（パスワードリセット時）のみ受け付けます。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordUpdateRequest'
+      responses:
+        '200':
+          description: パスワード更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: 'Password updated successfully.'
+        '400':
+          description: トークン・認証コード・バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                invalid:
+                  value:
+                    success: false
+                    message: 'Invalid or expired token/code.'
+        '404':
+          description: ユーザー・トークンが存在しない場合等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                notfound:
+                  value:
+                    success: false
+                    message: 'User not found.'
+
+  /auth/verify:
+    post:
+      summary: メール認証トークン受付
+      description: |
+        メール本文記載のトークンおよび認証種別（type: signup or reset）を受け取り、認証処理を行います。
+        認証に成功するとアカウントが有効化、またはパスワードリセット処理が進行します。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyTokenRequest'
+      responses:
+        '200':
+          description: 認証成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: 'Verification succeeded.'
+        '400':
+          description: 無効または期限切れトークン等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                invalid:
+                  value:
+                    success: false
+                    message: 'Invalid or expired token.'
+        '404':
+          description: トークン対象のユーザーが存在しない場合等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                notfound:
+                  value:
+                    success: false
+                    message: 'User not found.'
+
+  /auth/autologin:
+    post:
+      summary: 自動ログイン
+      description: |
+        クライアントのCookieに保存されたRememberトークンを使用して自動ログイン処理を行います。
+        成功時は通常のログインと同様にユーザー情報やCSRFトークン等を返します。
+        ※リクエストボディは不要で、認証トークンはCookieで自動送信されます。
+      responses:
+        '200':
+          description: 自動ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  value:
+                    state: success
+                    user:
+                      id: 1
+                      name: "サンプルユーザー"
+                      email: "user@example.com"
+                      is_deleted: false
+                      is_verified: true
+                      created_at: "2024-01-01T00:00:00"
+                      updated_at: "2024-01-01T00:00:00"
+                      last_login: "2024-07-18T12:34:56"
+                      language: ja
+                      theme: light
+                    csrfToken: "xxxxxx"
+                    rememberToken: "xxxxxx"
+        '401':
+          description: トークン無効または認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                error:
+                  value:
+                    state: error
+                    message: 'Invalid or expired token.'
+                    user: null
+                    csrfToken: null
+                    rememberToken: null
+        '400':
+          description: リクエスト不正（Cookie未送信など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                nocookie:
+                  value:
+                    state: error
+                    message: 'No remember token found.'
+                    user: null
+                    csrfToken: null
+                    rememberToken: null
+
+  /apps:
+    get:
+      summary: ユーザーの登録アプリ一覧取得
+      description: |
+        認証済みユーザーが自身の登録アプリ一覧を取得します。
+        リクエストヘッダ（x-csrf-token）に基づき、バックエンド側でユーザーを特定します。
+      security:
+        - CsrfAuth: []
+      responses:
+        '200':
+          description: アプリ一覧（空配列も許容）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppData'
+              examples:
+                apps:
+                  value:
+                    - name: "サンプルアプリ1"
+                      appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                      url: "https://gacha.example.com"
+                      description: "サンプルアプリの説明"
+                      date_update_time: "04:00"
+                      sync_update_time: true
+                      currency_unit: "JPY"
+                      pity_system: true
+                      guarantee_count: 90
+                      rarity_defs:
+                        - label: "★5"
+                          value: "01HV54V9S3Y9RK7Q2K2WRRYM1M"
+                      marker_defs: []
+                      task_defs: []
+        '401':
+          description: 認証・CSRFトークン不備等
+
+    post:
+      summary: アプリ新規登録
+      description: |
+        新しいガチャアプリ（タイトル・サービス）を登録します。
+        ユーザー情報はCSRFトークンヘッダで引き当てます。
+      security:
+        - CsrfAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppData'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppData'
+              examples:
+                created:
+                  value:
+                    name: "新規アプリ"
+                    appId: "01HV55X62BZ2WTK2V6E2WQ68CR"
+                    url: "https://gacha.example.com"
+                    description: "新規登録アプリの説明"
+                    date_update_time: "05:00"
+                    sync_update_time: false
+                    currency_unit: "JPY"
+        '400':
+          description: バリデーションエラーなど
+        '401':
+          description: 認証・CSRF不備
+
+  /apps/{appId}:
+    get:
+      summary: 単一アプリデータ取得
+      description: |
+        指定したアプリID（appId）のアプリデータを取得します。
+        通常は /apps の一覧取得で全データを取得する運用が推奨されていますが、
+        将来的な拡張性・個別参照用としてAPI公開しています。
+        ユーザーの判別は x-csrf-token ヘッダによって行います。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+      responses:
+        '200':
+          description: アプリデータ取得成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/AppData'
+              examples:
+                app:
+                  value:
+                    name: "サンプルアプリ"
+                    appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                    url: "https://gacha.example.com"
+                    description: "サンプルアプリの説明"
+                    date_update_time: "04:00"
+                    sync_update_time: true
+                    currency_unit: "JPY"
+                    pity_system: true
+                    guarantee_count: 90
+                    rarity_defs:
+                      - label: "★5"
+                        value: "01HV54V9S3Y9RK7Q2K2WRRYM1M"
+                    marker_defs: []
+                    task_defs: []
+        '404':
+          description: 該当するアプリが存在しない場合（または権限がない場合）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  app:
+                    type: 'null'
+                example:
+                  app: null
+        '401':
+          description: 認証・CSRFトークン不備等
+
+    put:
+      summary: アプリデータ更新
+      description: |
+        指定したアプリID（appId）のアプリ情報を更新します。
+        ユーザー判別はCSRFトークンで実施。対象が存在しない場合は404。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppData'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppData'
+        '400':
+          description: バリデーションエラーなど
+        '404':
+          description: アプリIDが存在しない・権限なし
+        '401':
+          description: 認証・CSRF不備
+
+    delete:
+      summary: アプリの削除
+      description: |
+        指定したアプリID（appId）のアプリを削除します。
+        CSRFトークンヘッダで認証・ユーザー引き当てを行います。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "削除するアプリID（ULID形式）"
+      responses:
+        '200':
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              examples:
+                success:
+                  value:
+                    state: success
+                    message: "アプリを削除しました。"
+        '400':
+          description: バリデーションエラー等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              examples:
+                error:
+                  value:
+                    state: error
+                    message: "削除対象が存在しません。"
+        '404':
+          description: 対象アプリが存在しない・権限なし
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              examples:
+                notfound:
+                  value:
+                    state: error
+                    message: "指定されたアプリIDは存在しません。"
+        '401':
+          description: 認証・CSRFトークン不備等
+
+  /logs/{appId}:
+    get:
+      summary: アプリの日次ログ一覧取得
+      description: |
+        指定したアプリ（appId）の日次ログを取得します。
+        期間指定や件数制限、オフセットが可能です。
+        CSRFトークンヘッダでユーザーを判別します。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          required: false
+          description: "取得範囲の開始日（YYYY-MM-DD）"
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          required: false
+          description: "取得範囲の終了日（YYYY-MM-DD）"
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+          required: false
+          description: "取得件数（省略時は無制限）"
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+          required: false
+          description: "開始オフセット（ページネーション用途）"
+      responses:
+        '200':
+          description: 日次ログ配列（該当なし時は空配列）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DateLog'
+              examples:
+                logs:
+                  value:
+                    - appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                      date: "2024-07-18"
+                      total_pulls: 50
+                      discharge_items: 2
+                      drop_details:
+                        - rarity: "★5"
+                          name: "エクスカリバー"
+                          marker: "限定"
+                        - rarity: "★4"
+                          name: "マナ"
+                          marker: null
+                      expense: 3000
+                      tags: ["爆死", "ピックアップ"]
+                      free_text: "天井手前で★5ゲット"
+                      images: []
+                      tasks: []
+                      last_updated: "2024-07-18T12:34:56"
+        '400':
+          description: バリデーションエラー等
+        '401':
+          description: 認証・CSRF不備等
+        '404':
+          description: appIdが存在しない・権限なし
+
+  /logs/daily/{appId}/{date}:
+    get:
+      summary: 指定アプリ・日付の日次ログデータ取得
+      description: |
+        指定アプリID（appId）・日付（date）の日次ログデータを1件取得します。
+        ユーザー判別はリクエストヘッダの x-csrf-token で行います。
+        該当データがなければ null を返します。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+        - in: path
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: "日付（YYYY-MM-DD）"
+      responses:
+        '200':
+          description: 日次ログデータ取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateLog'
+              examples:
+                log:
+                  value:
+                    appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                    date: "2024-07-19"
+                    total_pulls: 30
+                    discharge_items: 1
+                    drop_details:
+                      - rarity: "★5"
+                        name: "ラストワン賞"
+                        marker: null
+                    expense: 2000
+                    tags: ["イベント"]
+                    free_text: "神引き！"
+                    images: []
+                    tasks: []
+                    last_updated: "2024-07-19T10:15:00"
+        '404':
+          description: ログが存在しない場合
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  log:
+                    type: 'null'
+                example:
+                  log: null
+        '401':
+          description: 認証・CSRF不備等
+
+    post:
+      summary: 日次ログの新規登録
+      description: |
+        指定したアプリID・日付に対する日次ログを新規作成します。
+        ユーザー認証はCSRFトークンヘッダにより実施します。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+        - in: path
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: "記録対象日（YYYY-MM-DD）"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DateLog'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateLog'
+        '400':
+          description: バリデーションエラー
+        '401':
+          description: 認証・CSRF不備等
+        '409':
+          description: 既にデータが存在する場合（ユニーク制約エラー）
+
+    put:
+      summary: 日次ログの更新
+      description: |
+        指定したアプリID・日付の既存の日次ログを更新します。
+        ユーザー認証はCSRFトークンヘッダにより実施します。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+        - in: path
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: "記録対象日（YYYY-MM-DD）"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DateLog'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateLog'
+        '400':
+          description: バリデーションエラー
+        '401':
+          description: 認証・CSRF不備等
+        '404':
+          description: データが存在しない場合
+
+    delete:
+      summary: 日次ログデータの削除
+      description: |
+        指定したアプリID・日付の日次ログデータを削除します。
+        CSRFトークンヘッダでユーザー認証・権限確認を行います。
+        （現時点でフロントUI未実装ですが、将来のためAPIとしては公開）
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+        - in: path
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+          description: "削除対象日付（YYYY-MM-DD）"
+      responses:
+        '200':
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              examples:
+                success:
+                  value:
+                    state: success
+                    message: "日次ログデータを削除しました。"
+        '404':
+          description: 対象ログが存在しない場合
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              examples:
+                notfound:
+                  value:
+                    state: error
+                    message: "指定された日次ログデータは存在しません。"
+        '401':
+          description: 認証・CSRFトークン不備等
+        '400':
+          description: バリデーションエラー等
+
+  /logs/import/{appId}:
+    post:
+      summary: ログデータのバルクインポート
+      description: |
+        指定アプリIDのログデータをJSONまたはCSVファイルで一括インポートします。
+        モードにより「全上書き」または「マージ」が選択可能です。
+        ユーザー認証はCSRFトークンヘッダにより行います。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+        - in: query
+          name: mode
+          required: true
+          schema:
+            type: string
+            enum: [overwrite, merge]
+          description: "インポートモード: overwrite=全上書き、merge=既存とマージ"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "アップロードする履歴ファイル（jsonまたはcsv）"
+              required:
+                - file
+      responses:
+        '200':
+          description: インポート結果（成功または失敗）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportLogsResponse'
+              examples:
+                success:
+                  value:
+                    state: success
+                    message: "履歴のインポートが完了しました。"
+                error:
+                  value:
+                    state: error
+                    message: "ファイル形式が不正です。"
+        '400':
+          description: バリデーションエラー・ファイル不備等
+        '401':
+          description: 認証・CSRF不備等
+
+  /stats/{appId}:
+    get:
+      summary: アプリ単位の統計データ取得
+      description: |
+        指定アプリIDの集計期間における統計データを取得します。
+        CSRFトークンヘッダでユーザー認証・引き当てを行います。
+      security:
+        - CsrfAuth: []
+      parameters:
+        - in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+          description: "アプリID（ULID形式）"
+        - in: query
+          name: start
+          required: true
+          schema:
+            type: string
+            format: date
+          description: "集計開始日（YYYY-MM-DD）"
+        - in: query
+          name: end
+          required: true
+          schema:
+            type: string
+            format: date
+          description: "集計終了日（YYYY-MM-DD）"
+      responses:
+        '200':
+          description: 統計データ取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsData'
+              examples:
+                stats:
+                  value:
+                    appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                    startDate: "2024-06-01"
+                    endDate: "2024-06-30"
+                    totalPulls: 500
+                    rareDropCount: 7
+                    rareDropRate: 0.014
+                    totalExpense: 25000
+                    averageExpense: 3571
+                    averageRareDropRate: 71.4
+                    totalLogs: 30
+                    monthsInPeriod: 1
+                    averageMonthlyExpense: 25000
+        '400':
+          description: バリデーションエラー
+        '401':
+          description: 認証・CSRF不備等
+        '404':
+          description: appIdが存在しない・権限なし
+
+  /user/update:
+    put:
+      summary: ユーザープロフィール更新
+      description: |
+        ログインユーザー自身のプロフィール情報（表示名、アバター画像、言語設定、テーマなど）を部分更新します。
+        テキストのみ、または画像ファイル等を含む場合は multipart/form-data で送信可能です。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequestFormData'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+              examples:
+                success:
+                  value:
+                    state: success
+                    user:
+                      id: 1
+                      name: "新しい表示名"
+                      email: "user@example.com"
+                      avatar_url: "https://cdn.example.com/avatars/1.jpg"
+                      language: ja
+                      theme: dark
+                      updated_at: "2024-07-18T23:45:01"
+                      is_deleted: false
+                      is_verified: true
+                      created_at: "2024-01-01T00:00:00"
+                      last_login: "2024-07-18T12:34:56"
+                    message: "プロフィールを更新しました。"
+        '400':
+          description: バリデーションエラー等
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+              examples:
+                error:
+                  value:
+                    state: error
+                    user: null
+                    message: "Invalid profile data."
+        '401':
+          description: 未認証・権限なし
+
+components:
+  schemas:
+    # 認証・ユーザー関連
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+          description: ログイン用メールアドレス
+        password:
+          type: string
+          example: password123
+          description: パスワード（プレーンテキスト）
+        remember:
+          type: boolean
+          example: true
+          description: "Remember Me オプション。trueの場合、remember_tokenが返される"
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [success, error]
+          description: "レスポンス状態"
+        message:
+          type: string
+          nullable: true
+          description: "エラー時または補足時のメッセージ"
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        csrfToken:
+          type: string
+          nullable: true
+          description: "CSRF対策用トークン"
+        rememberToken:
+          type: string
+          nullable: true
+          description: "Remember Meトークン（開発・Remember=true時のみ）"
+      required:
+        - state
+        - user
+
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ユーザー表示名
+        email:
+          type: string
+          format: email
+          description: ログイン用メールアドレス
+        password:
+          type: string
+          description: パスワード
+        language:
+          type: string
+          description: "言語設定（例: ja, en）"
+      required:
+        - name
+        - email
+        - password
+        - language
+
+    RegisterResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [success, error]
+          description: レスポンス状態
+        message:
+          type: string
+          description: メッセージ
+      required:
+        - state
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "ユーザーID"
+        name:
+          type: string
+          description: "ユーザー名（表示名）"
+        email:
+          type: string
+          format: email
+          description: "メールアドレス"
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+          description: "アバター画像URL"
+        roles:
+          type: array
+          items:
+            type: string
+          description: "ユーザー権限・役割（admin, user等）"
+        plan:
+          type: string
+          description: "ユーザープラン"
+          example: free
+        plan_expiration:
+          type: string
+          format: date
+          nullable: true
+          description: "プランの有効期限"
+        plan_limits:
+          $ref: '#/components/schemas/UserPlanLimits'
+        language:
+          type: string
+          description: "ユーザーの言語設定"
+          example: ja
+        theme:
+          type: string
+          description: "テーマ設定"
+          example: light
+        home_page:
+          type: string
+          description: "ログイン後のホームページ"
+          example: "/dashboard"
+        created_at:
+          type: string
+          format: date-time
+          description: "ユーザー登録日時"
+        updated_at:
+          type: string
+          format: date-time
+          description: "ユーザー情報更新日時"
+        last_login:
+          type: string
+          format: date-time
+          description: "最終ログイン日時"
+        last_login_ip:
+          type: string
+          format: ipv4
+          nullable: true
+          description: "最終ログインIPアドレス"
+        last_login_user_agent:
+          type: string
+          nullable: true
+          description: "最終ログイン時ユーザーエージェント"
+        is_deleted:
+          type: boolean
+          description: "論理削除フラグ"
+        is_verified:
+          type: boolean
+          description: "メール認証済みフラグ"
+        unread_notifications:
+          type: array
+          items:
+            type: integer
+          description: "未読通知ID一覧"
+      required:
+        - id
+        - name
+        - email
+        - language
+        - theme
+        - created_at
+        - updated_at
+        - last_login
+        - is_deleted
+        - is_verified
+
+    UserPlanLimits:
+      type: object
+      properties:
+        maxApps:
+          type: integer
+        maxAppNameLength:
+          type: integer
+        maxAppDescriptionLength:
+          type: integer
+        maxLogTags:
+          type: integer
+        maxLogTagLength:
+          type: integer
+        maxLogTextLength:
+          type: integer
+        maxLogsPerApp:
+          type: integer
+        maxLogSize:
+          type: integer
+        maxStorage:
+          type: integer
+      description: "ユーザーの各種プラン上限値（動的キーも許可）"
+      additionalProperties: true
+
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: パスワード再設定対象のメールアドレス
+      required:
+        - email
+
+    PasswordResetResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 成否フラグ
+        message:
+          type: string
+          description: メッセージ
+      required:
+        - success
+
+    PasswordUpdateRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "認証トークン（メール認証やリセットリンクに含まれる）"
+        type:
+          type: string
+          enum: [signup, reset]
+          description: "操作種別: signup（新規登録認証時）または reset（パスワードリセット時）"
+        code:
+          type: string
+          description: "認証コード（メール本文等に記載のコード）"
+        password:
+          type: string
+          description: "新しいパスワード"
+      required:
+        - token
+        - type
+        - code
+        - password
+
+    VerifyTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "認証トークン（メール本文のURLクエリに含まれる）"
+        type:
+          type: string
+          enum: [signup, reset]
+          description: "認証種別: signup（新規登録認証）または reset（パスワードリセット認証）"
+      required:
+        - token
+        - type
+
+    VerifyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 成否フラグ
+        message:
+          type: string
+          description: 補足メッセージ
+      required:
+        - success
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "新しい表示名"
+        avatar_url:
+          type: string
+          format: uri
+          description: "アバター画像URL（画像アップロード済みの場合）"
+        language:
+          type: string
+          description: "言語設定"
+        theme:
+          type: string
+          description: "テーマ設定（light, dark など）"
+      additionalProperties: true
+      description: |
+        ユーザー情報の部分更新（必要な項目のみ送信）
+
+    UserUpdateRequestFormData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "新しい表示名"
+        avatar:
+          type: string
+          format: binary
+          description: "アバター画像ファイル"
+        language:
+          type: string
+          description: "言語設定"
+        theme:
+          type: string
+          description: "テーマ設定"
+      additionalProperties: true
+      description: |
+        multipart/form-dataで送信する場合のフォームデータ定義
+
+    UserUpdateResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserResponse'
+      required:
+        - state
+        - user
+
+    # アプリ
+    AppData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "アプリ名"
+        appId:
+          type: string
+          description: "アプリID（ULID形式、ユーザーごとに一意）"
+        url:
+          type: string
+          nullable: true
+          description: "アプリURL"
+        description:
+          type: string
+          nullable: true
+          description: "アプリ説明"
+        date_update_time:
+          type: string
+          nullable: true
+          description: "UI上の日付切替時刻（HH:mm形式）"
+        sync_update_time:
+          type: boolean
+          description: "true の場合、UIの日付切替時刻を当日の date_update_time に同期"
+        currency_unit:
+          type: string
+          nullable: true
+          description: "通貨単位"
+        pity_system:
+          type: boolean
+          nullable: true
+          description: "レア排出保証システムの有無"
+        guarantee_count:
+          type: integer
+          nullable: true
+          description: "レア排出保証回数（天井）"
+        rarity_defs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SymbolOption'
+          nullable: true
+          description: "レアリティ定義"
+        marker_defs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SymbolOption'
+          nullable: true
+          description: "マーキング定義"
+        task_defs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SymbolOption'
+          nullable: true
+          description: "タスク定義"
+      required:
+        - name
+        - appId
+        - sync_update_time
+
+    SymbolOption:
+      type: object
+      properties:
+        icon:
+          type: string
+          nullable: true
+          description: "アイコン"
+        symbol:
+          type: string
+          nullable: true
+          description: "シンボル"
+        label:
+          type: string
+          description: "ラベル"
+        value:
+          type: string
+          description: "オプション値（ULID形式で一意）"
+        desc:
+          type: string
+          nullable: true
+          description: "説明"
+        order:
+          type: integer
+          nullable: true
+          description: "表示順"
+      required:
+        - label
+        - value
+
+    DeleteResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+      required:
+        - state
+
+    # ログ
+    DateLog:
+      type: object
+      properties:
+        appId:
+          type: string
+          description: "アプリID"
+        date:
+          type: string
+          format: date
+          description: "記録日（YYYY-MM-DD）"
+        total_pulls:
+          type: integer
+          description: "当日ガチャ回数"
+        discharge_items:
+          type: integer
+          description: "当日レア排出数"
+        drop_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/DropDetail'
+          description: "レア排出詳細"
+        expense:
+          type: integer
+          description: "ガチャ費用合計"
+        tags:
+          type: array
+          items:
+            type: string
+          description: "タグ（最大3つ）"
+        free_text:
+          type: string
+          description: "フリーテキスト（max 200文字）"
+        images:
+          type: array
+          items:
+            type: string
+          description: "添付画像ファイルパス配列（将来機能）"
+        tasks:
+          type: array
+          items:
+            type: string
+          description: "完了タスク名配列（将来機能）"
+        last_updated:
+          type: string
+          format: date-time
+          nullable: true
+          description: "最終更新日時"
+      required:
+        - appId
+        - date
+        - total_pulls
+        - discharge_items
+        - drop_details
+        - expense
+        - tags
+        - free_text
+        - images
+        - tasks
+
+    DropDetail:
+      type: object
+      properties:
+        rarity:
+          type: string
+          nullable: true
+          description: "レアリティ"
+        name:
+          type: string
+          nullable: true
+          description: "排出アイテム名"
+        marker:
+          type: string
+          nullable: true
+          description: "マーキング"
+      required:
+        - rarity
+        - name
+        - marker
+
+    ImportLogsResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+      required:
+        - state
+
+    # 統計データ
+    StatsData:
+      type: object
+      properties:
+        appId:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        totalPulls:
+          type: integer
+        rareDropCount:
+          type: integer
+        rareDropRate:
+          type: number
+          format: float
+        totalExpense:
+          type: integer
+        averageExpense:
+          type: number
+          format: float
+        averageRareDropRate:
+          type: number
+          format: float
+        totalLogs:
+          type: integer
+          nullable: true
+        monthsInPeriod:
+          type: integer
+          nullable: true
+        averageMonthlyExpense:
+          type: number
+          format: float
+          nullable: true
+      required:
+        - appId
+        - startDate
+        - endDate
+        - totalPulls
+        - rareDropCount
+        - rareDropRate
+        - totalExpense
+        - averageExpense
+        - averageRareDropRate
+
+  securitySchemes:
+    CsrfAuth:
+      type: apiKey
+      in: header
+      name: x-csrf-token
+      description: "CSRF対策用トークン。全ての認証済みAPIで必要"
