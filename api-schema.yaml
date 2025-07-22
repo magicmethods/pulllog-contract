@@ -5,10 +5,18 @@ info:
     ガチャ履歴管理アプリ「PullLog」バックエンドAPI仕様
   version: 1.0.0
 servers:
-  - url: https://api.pulllog.net/beta
-    description: Production server
-  - url: http://localhost:3030/v1
-    description: Local development server
+  - url: https://api.pulllog.net/{basePath}
+    description: Production v1
+    variables:
+      basePath:
+        default: v1
+        description: APIバージョン
+  - url: http://localhost:3030/{basePath}
+    description: Local development beta
+    variables:
+      basePath:
+        default: beta
+        description: APIバージョン
 
 paths:
   /auth/login:
