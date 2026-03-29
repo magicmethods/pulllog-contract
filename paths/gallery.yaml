@@ -1,0 +1,183 @@
+/gallery/assets:
+  get:
+    summary: ギャラリー資産一覧取得
+    description: |
+      認証済みユーザーのギャラリー資産をページネーション付きで取得します。
+      フィルタ条件（期間・タグ・キーワード等）をクエリに指定できます。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+        description: 取得ページ番号（デフォルト1）
+      - in: query
+        name: per
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+        description: 1ページあたりの件数（デフォルト30、最大100）
+      - in: query
+        name: from
+        schema:
+          type: string
+          format: date
+        description: 取得開始日（ISO8601日付）。指定時は当日0時からを対象。
+      - in: query
+        name: to
+        schema:
+          type: string
+          format: date
+        description: 取得終了日。指定時は当日23:59:59までを対象。
+      - in: query
+        name: log_id
+        schema:
+          type: integer
+        description: 紐付けたいログIDでフィルタ
+      - in: query
+        name: tags[]
+        schema:
+          type: string
+        description: タグ名によるフィルタ（複数指定可）
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: タイトル・説明の部分一致キーワード
+    responses:
+      '200':
+        description: ギャラリー資産一覧
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/gallery.yaml#/components/schemas/GalleryAssetListResponse'
+      '401':
+        description: 認証失敗またはCSRFトークン不備
+
+  post:
+    summary: ギャラリー資産アップロード
+    description: |
+      画像ファイルをアップロードし、ギャラリー資産として登録します。
+      重複ファイルや容量超過時はエラーを返します。
+    security:
+      - CsrfAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../schemas/gallery.yaml#/components/schemas/GalleryAssetUploadRequest'
+    responses:
+      '201':
+        description: アップロード成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/gallery.yaml#/components/schemas/GalleryAsset'
+      '400':
+        description: バリデーションエラー（ファイル種別やサイズ超過など）
+      '401':
+        description: 認証失敗またはCSRFトークン不備
+      '403':
+        description: 容量上限を超過した場合
+      '409':
+        description: 同一ファイルが既に登録済み
+
+/gallery/assets/{assetId}:
+  get:
+    summary: ギャラリー資産詳細取得
+    description: 指定した資産IDの詳細を取得します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ギャラリー資産ID
+    responses:
+      '200':
+        description: 資産詳細
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/gallery.yaml#/components/schemas/GalleryAsset'
+      '401':
+        description: 認証失敗またはCSRFトークン不備
+      '404':
+        description: 資産が存在しない、またはアクセス権が無い
+
+  patch:
+    summary: ギャラリー資産のメタデータ更新
+    description: タイトルや説明、タグ、可視性を更新します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ギャラリー資産ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/gallery.yaml#/components/schemas/GalleryAssetUpdateRequest'
+    responses:
+      '200':
+        description: 更新後の資産データ
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/gallery.yaml#/components/schemas/GalleryAsset'
+      '400':
+        description: バリデーションエラー
+      '401':
+        description: 認証失敗またはCSRFトークン不備
+      '404':
+        description: 資産が存在しない、またはアクセス権が無い
+
+  delete:
+    summary: ギャラリー資産の削除
+    description: 指定した資産を論理削除します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ギャラリー資産ID
+    responses:
+      '204':
+        description: 削除成功（レスポンスボディなし）
+      '401':
+        description: 認証失敗またはCSRFトークン不備
+      '404':
+        description: 資産が存在しない、またはアクセス権が無い
+
+/gallery/usage:
+  get:
+    summary: ギャラリー使用量取得
+    description: 認証済みユーザーのギャラリー使用量と上限を返します。
+    security:
+      - CsrfAuth: []
+    responses:
+      '200':
+        description: 使用量情報
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/gallery.yaml#/components/schemas/GalleryUsageResponse'
+      '401':
+        description: 認証失敗またはCSRFトークン不備

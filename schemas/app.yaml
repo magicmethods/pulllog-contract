@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: PullLog App Schemas
+  version: 1.0.0
+components:
+  schemas:
+    AppData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: アプリ名
+        appId:
+          type: string
+          description: アプリID（ULID形式、ユーザーごとに一意）
+        url:
+          type: string
+          nullable: true
+          description: アプリURL
+        description:
+          type: string
+          nullable: true
+          description: アプリ説明
+        date_update_time:
+          type: string
+          nullable: true
+          description: UI上の日付切替時刻（HH:mm形式）
+        sync_update_time:
+          type: boolean
+          description: true の場合、UIの日付切替時刻を当日の date_update_time に同期
+        currency_unit:
+          type: string
+          nullable: true
+          description: 通貨単位
+        pity_system:
+          type: boolean
+          nullable: true
+          description: レア排出保証システムの有無
+        guarantee_count:
+          type: integer
+          nullable: true
+          description: レア排出保証回数（天井）
+        rarity_defs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SymbolOption'
+          nullable: true
+          description: レアリティ定義
+        marker_defs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SymbolOption'
+          nullable: true
+          description: マーキング定義
+        task_defs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SymbolOption'
+          nullable: true
+          description: タスク定義
+      required:
+        - name
+        - appId
+        - sync_update_time
+    SymbolOption:
+      type: object
+      properties:
+        icon:
+          type: string
+          nullable: true
+          description: アイコン
+        symbol:
+          type: string
+          nullable: true
+          description: シンボル
+        label:
+          type: string
+          description: ラベル
+        value:
+          type: string
+          description: オプション値（ULID形式で一意）
+        desc:
+          type: string
+          nullable: true
+          description: 説明
+        order:
+          type: integer
+          nullable: true
+          description: 表示順
+      required:
+        - label
+        - value
+paths: {}

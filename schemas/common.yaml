@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: PullLog Common Schemas
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    DeleteResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - success
+            - error
+        message:
+          type: string
+      required:
+        - state
+    StatsData:
+      type: object
+      properties:
+        appId:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        totalPulls:
+          type: integer
+        rareDropCount:
+          type: integer
+        rareDropRate:
+          type: number
+          format: float
+        totalExpense:
+          type: integer
+        averageExpense:
+          type: number
+          format: float
+        averageRareDropRate:
+          type: number
+          format: float
+        totalLogs:
+          type: integer
+          nullable: true
+        monthsInPeriod:
+          type: integer
+          nullable: true
+        averageMonthlyExpense:
+          type: number
+          format: float
+          nullable: true
+      required:
+        - appId
+        - startDate
+        - endDate
+        - totalPulls
+        - rareDropCount
+        - rareDropRate
+        - totalExpense
+        - averageExpense
+        - averageRareDropRate

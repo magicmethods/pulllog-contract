@@ -1,0 +1,321 @@
+openapi: 3.0.3
+info:
+  title: PullLog Auth Schemas
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+          description: ログイン用メールアドレス
+        password:
+          type: string
+          example: password123
+          description: パスワード（プレーンテキスト）
+        remember:
+          type: boolean
+          example: true
+          description: Remember Me オプション。trueの場合、remember_tokenが返される
+      required:
+        - email
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - success
+            - error
+          description: レスポンス状態
+        message:
+          type: string
+          nullable: true
+          description: エラー時または補足時のメッセージ
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        csrfToken:
+          type: string
+          nullable: true
+          description: CSRF対策用トークン
+        rememberToken:
+          type: string
+          nullable: true
+          description: Remember Meトークン（開発・Remember=true時のみ）
+      required:
+        - state
+        - user
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: ユーザー表示名
+        email:
+          type: string
+          format: email
+          description: ログイン用メールアドレス
+        password:
+          type: string
+          description: パスワード
+        language:
+          type: string
+          description: '言語設定（例: ja, en）'
+      required:
+        - name
+        - email
+        - password
+        - language
+    RegisterResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - success
+            - error
+          description: レスポンス状態
+        message:
+          type: string
+          description: メッセージ
+      required:
+        - state
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ユーザーID
+        name:
+          type: string
+          description: ユーザー名（表示名）
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+          description: アバター画像URL
+        roles:
+          type: array
+          items:
+            type: string
+          description: ユーザー権限・役割（admin, user等）
+        plan:
+          type: string
+          description: ユーザープラン
+          example: free
+        plan_expiration:
+          type: string
+          format: date
+          nullable: true
+          description: プランの有効期限
+        plan_limits:
+          $ref: '#/components/schemas/UserPlanLimits'
+        language:
+          type: string
+          description: ユーザーの言語設定
+          example: ja
+        theme:
+          type: string
+          description: テーマ設定
+          example: light
+        home_page:
+          type: string
+          description: ログイン後のホームページ
+          example: /dashboard
+        created_at:
+          type: string
+          format: date-time
+          description: ユーザー登録日時
+        updated_at:
+          type: string
+          format: date-time
+          description: ユーザー情報更新日時
+        last_login:
+          type: string
+          format: date-time
+          description: 最終ログイン日時
+        last_login_ip:
+          type: string
+          format: ipv4
+          nullable: true
+          description: 最終ログインIPアドレス
+        last_login_user_agent:
+          type: string
+          nullable: true
+          description: 最終ログイン時ユーザーエージェント
+        is_deleted:
+          type: boolean
+          description: 論理削除フラグ
+        is_verified:
+          type: boolean
+          description: メール認証済みフラグ
+        unread_notifications:
+          type: array
+          items:
+            type: integer
+          description: 未読通知ID一覧
+      required:
+        - id
+        - name
+        - email
+        - language
+        - theme
+        - created_at
+        - updated_at
+        - last_login
+        - is_deleted
+        - is_verified
+    UserPlanLimits:
+      type: object
+      properties:
+        maxApps:
+          type: integer
+        maxAppNameLength:
+          type: integer
+        maxAppDescriptionLength:
+          type: integer
+        maxLogTags:
+          type: integer
+        maxLogTagLength:
+          type: integer
+        maxLogTextLength:
+          type: integer
+        maxLogsPerApp:
+          type: integer
+        maxLogSize:
+          type: integer
+        maxStorage:
+          type: integer
+      description: ユーザーの各種プラン上限値（動的キーも許可）
+      additionalProperties: true
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: パスワード再設定対象のメールアドレス
+      required:
+        - email
+    PasswordResetResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 成否フラグ
+        message:
+          type: string
+          description: メッセージ
+      required:
+        - success
+    PasswordUpdateRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: 認証トークン（メール認証やリセットリンクに含まれる）
+        type:
+          type: string
+          enum:
+            - signup
+            - reset
+          description: '操作種別: signup（新規登録認証時）または reset（パスワードリセット時）'
+        code:
+          type: string
+          description: 認証コード（メール本文等に記載のコード）
+        password:
+          type: string
+          description: 新しいパスワード
+      required:
+        - token
+        - type
+        - code
+        - password
+    VerifyTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: 認証トークン（メール本文のURLクエリに含まれる）
+        type:
+          type: string
+          enum:
+            - signup
+            - reset
+          description: '認証種別: signup（新規登録認証）または reset（パスワードリセット認証）'
+      required:
+        - token
+        - type
+    VerifyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: 成否フラグ
+        message:
+          type: string
+          description: 補足メッセージ
+      required:
+        - success
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 新しい表示名
+        avatar_url:
+          type: string
+          format: uri
+          description: アバター画像URL（画像アップロード済みの場合）
+        language:
+          type: string
+          description: 言語設定
+        theme:
+          type: string
+          description: テーマ設定（light, dark など）
+      additionalProperties: true
+      description: |
+        ユーザー情報の部分更新（必要な項目のみ送信）
+    UserUpdateRequestFormData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 新しい表示名
+        avatar:
+          type: string
+          format: binary
+          description: アバター画像ファイル
+        language:
+          type: string
+          description: 言語設定
+        theme:
+          type: string
+          description: テーマ設定
+      additionalProperties: true
+      description: |
+        multipart/form-dataで送信する場合のフォームデータ定義
+    UserUpdateResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - success
+            - error
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserResponse'
+      required:
+        - state
+        - user

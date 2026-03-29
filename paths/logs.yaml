@@ -1,0 +1,388 @@
+/logs/{appId}:
+  get:
+    summary: アプリの日次ログ一覧取得
+    description: |
+      指定したアプリ（appId）の日次ログを取得します。
+      期間指定や件数制限、オフセットが可能です。
+      CSRFトークンヘッダでユーザーを判別します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+      - in: query
+        name: from
+        schema:
+          type: string
+          format: date
+        required: false
+        description: "取得範囲の開始日（YYYY-MM-DD）"
+      - in: query
+        name: to
+        schema:
+          type: string
+          format: date
+        required: false
+        description: "取得範囲の終了日（YYYY-MM-DD）"
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+        required: false
+        description: "取得件数（省略時は無制限）"
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          minimum: 0
+        required: false
+        description: "開始オフセット（ページネーション用途）"
+    responses:
+      '200':
+        description: 日次ログ配列（該当なし時は空配列）
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../schemas/log.yaml#/components/schemas/DateLog'
+            examples:
+              logs:
+                value:
+                  - appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                    date: "2024-07-18"
+                    total_pulls: 50
+                    discharge_items: 2
+                    drop_details:
+                      - rarity: "★5"
+                        name: "エクスカリバー"
+                        marker: "限定"
+                      - rarity: "★4"
+                        name: "マナ"
+                        marker: null
+                    expense: 3000
+                    tags: ["爆死", "ピックアップ"]
+                    free_text: "天井手前で★5ゲット"
+                    images: []
+                    tasks: []
+                    last_updated: "2024-07-18T12:34:56"
+      '400':
+        description: バリデーションエラー等
+      '401':
+        description: 認証・CSRF不備等
+      '404':
+        description: appIdが存在しない・権限なし
+
+/logs/daily/{appId}/{date}:
+  get:
+    summary: 指定アプリ・日付の日次ログデータ取得
+    description: |
+      指定アプリID（appId）・日付（date）の日次ログデータを1件取得します。
+      ユーザー判別はリクエストヘッダの x-csrf-token で行います。
+      該当データがなければ null を返します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+      - in: path
+        name: date
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "日付（YYYY-MM-DD）"
+    responses:
+      '200':
+        description: 日次ログデータ取得成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/log.yaml#/components/schemas/DateLog'
+            examples:
+              log:
+                value:
+                  appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                  date: "2024-07-19"
+                  total_pulls: 30
+                  discharge_items: 1
+                  drop_details:
+                    - rarity: "★5"
+                      name: "ラストワン賞"
+                      marker: null
+                  expense: 2000
+                  tags: ["イベント"]
+                  free_text: "神引き！"
+                  images: []
+                  tasks: []
+                  last_updated: "2024-07-19T10:15:00"
+      '404':
+        description: ログが存在しない場合
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                log:
+                  type: object
+                  nullable: true
+              example:
+                log: null
+      '401':
+        description: 認証・CSRF不備等
+
+  post:
+    summary: 日次ログの新規登録
+    description: |
+      指定したアプリID・日付に対する日次ログを新規作成します。
+      ユーザー認証はCSRFトークンヘッダにより実施します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+      - in: path
+        name: date
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "記録対象日（YYYY-MM-DD）"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/log.yaml#/components/schemas/DateLog'
+    responses:
+      '201':
+        description: 登録成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/log.yaml#/components/schemas/DateLog'
+      '400':
+        description: バリデーションエラー
+      '401':
+        description: 認証・CSRF不備等
+      '409':
+        description: 既にデータが存在する場合（ユニーク制約エラー）
+
+  put:
+    summary: 日次ログの更新
+    description: |
+      指定したアプリID・日付の既存の日次ログを更新します。
+      ユーザー認証はCSRFトークンヘッダにより実施します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+      - in: path
+        name: date
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "記録対象日（YYYY-MM-DD）"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/log.yaml#/components/schemas/DateLog'
+    responses:
+      '200':
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/log.yaml#/components/schemas/DateLog'
+      '400':
+        description: バリデーションエラー
+      '401':
+        description: 認証・CSRF不備等
+      '404':
+        description: データが存在しない場合
+
+  delete:
+    summary: 日次ログデータの削除
+    description: |
+      指定したアプリID・日付の日次ログデータを削除します。
+      CSRFトークンヘッダでユーザー認証・権限確認を行います。
+      （現時点でフロントUI未実装ですが、将来のためAPIとしては公開）
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+      - in: path
+        name: date
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "削除対象日付（YYYY-MM-DD）"
+    responses:
+      '200':
+        description: 削除成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+            examples:
+              success:
+                value:
+                  state: success
+                  message: "日次ログデータを削除しました。"
+      '404':
+        description: 対象ログが存在しない場合
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+            examples:
+              notfound:
+                value:
+                  state: error
+                  message: "指定された日次ログデータは存在しません。"
+      '401':
+        description: 認証・CSRFトークン不備等
+      '400':
+        description: バリデーションエラー等
+
+/logs/import/{appId}:
+  post:
+    summary: ログデータのバルクインポート
+    description: |
+      指定アプリIDのログデータをJSONまたはCSVファイルで一括インポートします。
+      モードにより「全上書き」または「マージ」が選択可能です。
+      ユーザー認証はCSRFトークンヘッダにより行います。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+      - in: query
+        name: mode
+        required: true
+        schema:
+          type: string
+          enum: [overwrite, merge]
+        description: "インポートモード: overwrite=全上書き、merge=既存とマージ"
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
+                description: "アップロードする履歴ファイル（jsonまたはcsv）"
+            required:
+              - file
+    responses:
+      '200':
+        description: インポート結果（成功または失敗）
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/log.yaml#/components/schemas/ImportLogsResponse'
+            examples:
+              success:
+                value:
+                  state: success
+                  message: "履歴のインポートが完了しました。"
+              error:
+                value:
+                  state: error
+                  message: "ファイル形式が不正です。"
+      '400':
+        description: バリデーションエラー・ファイル不備等
+      '401':
+        description: 認証・CSRF不備等
+
+/stats/{appId}:
+  get:
+    summary: アプリ単位の統計データ取得
+    description: |
+      指定アプリIDの集計期間における統計データを取得します。
+      CSRFトークンヘッダでユーザー認証・引き当てを行います。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+      - in: query
+        name: start
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "集計開始日（YYYY-MM-DD）"
+      - in: query
+        name: end
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "集計終了日（YYYY-MM-DD）"
+    responses:
+      '200':
+        description: 統計データ取得成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/StatsData'
+            examples:
+              stats:
+                value:
+                  appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                  startDate: "2024-06-01"
+                  endDate: "2024-06-30"
+                  totalPulls: 500
+                  rareDropCount: 7
+                  rareDropRate: 0.014
+                  totalExpense: 25000
+                  averageExpense: 3571
+                  averageRareDropRate: 71.4
+                  totalLogs: 30
+                  monthsInPeriod: 1
+                  averageMonthlyExpense: 25000
+      '400':
+        description: バリデーションエラー
+      '401':
+        description: 認証・CSRF不備等
+      '404':
+        description: appIdが存在しない・権限なし

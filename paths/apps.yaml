@@ -1,0 +1,213 @@
+/apps:
+  get:
+    summary: ユーザーの登録アプリ一覧取得
+    description: |
+      認証済みユーザーが自身の登録アプリ一覧を取得します。
+      リクエストヘッダ（x-csrf-token）に基づき、バックエンド側でユーザーを特定します。
+    security:
+      - CsrfAuth: []
+    responses:
+      '200':
+        description: アプリ一覧（空配列も許容）
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../schemas/app.yaml#/components/schemas/AppData'
+            examples:
+              apps:
+                value:
+                  - name: "サンプルアプリ1"
+                    appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                    url: "https://gacha.example.com"
+                    description: "サンプルアプリの説明"
+                    date_update_time: "04:00"
+                    sync_update_time: true
+                    currency_unit: "JPY"
+                    pity_system: true
+                    guarantee_count: 90
+                    rarity_defs:
+                      - label: "★5"
+                        value: "01HV54V9S3Y9RK7Q2K2WRRYM1M"
+                    marker_defs: []
+                    task_defs: []
+      '401':
+        description: 認証・CSRFトークン不備等
+
+  post:
+    summary: アプリ新規登録
+    description: |
+      新しいガチャアプリ（タイトル・サービス）を登録します。
+      ユーザー情報はCSRFトークンヘッダで引き当てます。
+    security:
+      - CsrfAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/app.yaml#/components/schemas/AppData'
+    responses:
+      '201':
+        description: 登録成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/app.yaml#/components/schemas/AppData'
+            examples:
+              created:
+                value:
+                  name: "新規アプリ"
+                  appId: "01HV55X62BZ2WTK2V6E2WQ68CR"
+                  url: "https://gacha.example.com"
+                  description: "新規登録アプリの説明"
+                  date_update_time: "05:00"
+                  sync_update_time: false
+                  currency_unit: "JPY"
+      '400':
+        description: バリデーションエラーなど
+      '401':
+        description: 認証・CSRF不備
+
+/apps/{appId}:
+  get:
+    summary: 単一アプリデータ取得
+    description: |
+      指定したアプリID（appId）のアプリデータを取得します。
+      通常は /apps の一覧取得で全データを取得する運用が推奨されていますが、
+      将来的な拡張性・個別参照用としてAPI公開しています。
+      ユーザーの判別は x-csrf-token ヘッダによって行います。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+    responses:
+      '200':
+        description: アプリデータ取得成功
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../schemas/app.yaml#/components/schemas/AppData'
+            examples:
+              app:
+                value:
+                  name: "サンプルアプリ"
+                  appId: "01HV54V9S30FJXDKM6QJY4KDKD"
+                  url: "https://gacha.example.com"
+                  description: "サンプルアプリの説明"
+                  date_update_time: "04:00"
+                  sync_update_time: true
+                  currency_unit: "JPY"
+                  pity_system: true
+                  guarantee_count: 90
+                  rarity_defs:
+                    - label: "★5"
+                      value: "01HV54V9S3Y9RK7Q2K2WRRYM1M"
+                  marker_defs: []
+                  task_defs: []
+      '404':
+        description: 該当するアプリが存在しない場合（または権限がない場合）
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                app:
+                  type: object
+                  nullable: true
+              example:
+                app: null
+      '401':
+        description: 認証・CSRFトークン不備等
+
+  put:
+    summary: アプリデータ更新
+    description: |
+      指定したアプリID（appId）のアプリ情報を更新します。
+      ユーザー判別はCSRFトークンで実施。対象が存在しない場合は404。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "アプリID（ULID形式）"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/app.yaml#/components/schemas/AppData'
+    responses:
+      '200':
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/app.yaml#/components/schemas/AppData'
+      '400':
+        description: バリデーションエラーなど
+      '404':
+        description: アプリIDが存在しない・権限なし
+      '401':
+        description: 認証・CSRF不備
+
+  delete:
+    summary: アプリの削除
+    description: |
+      指定したアプリID（appId）のアプリを削除します。
+      CSRFトークンヘッダで認証・ユーザー引き当てを行います。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: appId
+        required: true
+        schema:
+          type: string
+        description: "削除するアプリID（ULID形式）"
+    responses:
+      '200':
+        description: 削除成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+            examples:
+              success:
+                value:
+                  state: success
+                  message: "アプリを削除しました。"
+      '400':
+        description: バリデーションエラー等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+            examples:
+              error:
+                value:
+                  state: error
+                  message: "削除対象が存在しません。"
+      '404':
+        description: 対象アプリが存在しない・権限なし
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+            examples:
+              notfound:
+                value:
+                  state: error
+                  message: "指定されたアプリIDは存在しません。"
+      '401':
+        description: 認証・CSRFトークン不備等

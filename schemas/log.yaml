@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: PullLog Log Schemas
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    DateLog:
+      type: object
+      properties:
+        appId:
+          type: string
+          description: アプリID
+        date:
+          type: string
+          format: date
+          description: 記録日（YYYY-MM-DD）
+        total_pulls:
+          type: integer
+          description: 当日ガチャ回数
+        discharge_items:
+          type: integer
+          description: 当日レア排出数
+        drop_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/DropDetail'
+          description: レア排出詳細
+        expense:
+          type: integer
+          description: ガチャ費用合計
+        tags:
+          type: array
+          items:
+            type: string
+          description: タグ（最大3つ）
+        free_text:
+          type: string
+          description: フリーテキスト（max 200文字）
+        images:
+          type: array
+          items:
+            type: string
+          description: 添付画像ファイルパス配列（将来機能）
+        tasks:
+          type: array
+          items:
+            type: string
+          description: 完了タスク名配列（将来機能）
+        last_updated:
+          type: string
+          format: date-time
+          nullable: true
+          description: 最終更新日時
+      required:
+        - appId
+        - date
+        - total_pulls
+        - discharge_items
+        - drop_details
+        - expense
+        - tags
+        - free_text
+        - images
+        - tasks
+    DropDetail:
+      type: object
+      properties:
+        rarity:
+          type: string
+          nullable: true
+          description: レアリティ
+        name:
+          type: string
+          nullable: true
+          description: 排出アイテム名
+        marker:
+          type: string
+          nullable: true
+          description: マーキング
+      required:
+        - rarity
+        - name
+        - marker
+    ImportLogsResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - success
+            - error
+        message:
+          type: string
+      required:
+        - state

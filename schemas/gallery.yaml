@@ -1,0 +1,273 @@
+openapi: 3.0.3
+info:
+  title: PullLog Gallery Schemas
+  version: 1.0.0
+paths: {}
+components:
+  schemas:
+    GalleryAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ギャラリー資産ID
+        userId:
+          type: integer
+          description: 所有ユーザーID
+        logId:
+          type: integer
+          nullable: true
+          description: 紐付けられたログID（存在しない場合は null）
+        disk:
+          type: string
+          description: 保存先ディスク名
+        path:
+          type: string
+          description: オリジナルファイルのパス
+        url:
+          type: string
+          nullable: true
+          description: オリジナルファイルの参照URL（非公開時は null の可能性あり）
+        thumbSmall:
+          type: string
+          nullable: true
+          description: 小サイズサムネイルのパス
+        thumbSmallUrl:
+          type: string
+          nullable: true
+          description: 小サイズサムネイルのURL
+        thumbLarge:
+          type: string
+          nullable: true
+          description: 大サイズサムネイルのパス
+        thumbLargeUrl:
+          type: string
+          nullable: true
+          description: 大サイズサムネイルのURL
+        mime:
+          type: string
+          description: MIMEタイプ
+        bytes:
+          type: integer
+          description: オリジナルファイルのバイト数
+        bytesThumbSmall:
+          type: integer
+          description: 小サイズサムネイルのバイト数
+        bytesThumbLarge:
+          type: integer
+          description: 大サイズサムネイルのバイト数
+        width:
+          type: integer
+          nullable: true
+          description: オリジナル画像の幅
+        height:
+          type: integer
+          nullable: true
+          description: オリジナル画像の高さ
+        hashSha256:
+          type: string
+          description: 重複判定用のSHA-256ハッシュ
+        title:
+          type: string
+          nullable: true
+          description: タイトル
+        description:
+          type: string
+          nullable: true
+          description: 説明文
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          description: タグ配列（最大20件）
+        visibility:
+          type: string
+          enum:
+            - private
+            - unlisted
+            - public
+          description: 公開設定
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 削除日時（未削除なら null）
+      required:
+        - id
+        - userId
+        - disk
+        - path
+        - bytes
+        - bytesThumbSmall
+        - bytesThumbLarge
+        - visibility
+        - createdAt
+        - updatedAt
+    GalleryAssetUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: アップロードする画像ファイル（必須）
+        log_id:
+          type: integer
+          nullable: true
+          description: 紐付けるログID
+        title:
+          type: string
+          nullable: true
+          maxLength: 120
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 20
+        visibility:
+          type: string
+          nullable: true
+          enum:
+            - private
+            - unlisted
+            - public
+      required:
+        - file
+    GalleryAssetUpdateRequest:
+      type: object
+      properties:
+        log_id:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          nullable: true
+          maxLength: 120
+        description:
+          type: string
+          nullable: true
+          maxLength: 2000
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 20
+        visibility:
+          type: string
+          nullable: true
+          enum:
+            - private
+            - unlisted
+            - public
+      additionalProperties: false
+    GalleryAssetListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GalleryAsset'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+      required:
+        - data
+        - links
+        - meta
+    GalleryUsageResponse:
+      type: object
+      properties:
+        usedBytes:
+          type: integer
+          description: 使用済みバイト数
+        maxBytes:
+          type: integer
+          description: プラン上限バイト数
+        remainingBytes:
+          type: integer
+          description: 残りバイト数（0未満にならない）
+        filesCount:
+          type: integer
+          description: 登録済みファイル数
+      required:
+        - usedBytes
+        - maxBytes
+        - remainingBytes
+        - filesCount
+    PaginationLinks:
+      type: object
+      properties:
+        first:
+          type: string
+          nullable: true
+        last:
+          type: string
+          nullable: true
+        prev:
+          type: string
+          nullable: true
+        next:
+          type: string
+          nullable: true
+      required:
+        - first
+        - last
+        - prev
+        - next
+    PaginationMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        from:
+          type: integer
+          nullable: true
+        last_page:
+          type: integer
+        path:
+          type: string
+        per_page:
+          type: integer
+        to:
+          type: integer
+          nullable: true
+        total:
+          type: integer
+        links:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                nullable: true
+              label:
+                type: string
+              active:
+                type: boolean
+            required:
+              - label
+              - active
+      required:
+        - current_page
+        - last_page
+        - path
+        - per_page
+        - total
+        - links

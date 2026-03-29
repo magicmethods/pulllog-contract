@@ -1,0 +1,12 @@
+openapi: 3.0.3
+info:
+  title: PullLog Security Schemes
+  version: 1.0.0
+paths: {}
+components:
+  securitySchemes:
+    CsrfAuth:
+      type: apiKey
+      in: header
+      name: x-csrf-token
+      description: "CSRF対策用トークン。全ての認証済みAPIで必要"

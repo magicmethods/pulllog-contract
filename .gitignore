@@ -1,0 +1,23 @@
+# === 依存関係 ===
+node_modules/
+package-lock.json
+
+# === バンドル成果物（生成物のため追跡不要） ===
+api-schema.bundle.yaml
+api-schema.bundle.json
+dist/
+
+# === OS 生成ファイル ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === エディタ / IDE ===
+.idea/
+*.swp
+*.swo
+*~
+
+# === 一時ファイル ===
+*.tmp
+*.log

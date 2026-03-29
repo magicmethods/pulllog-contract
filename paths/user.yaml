@@ -1,0 +1,53 @@
+/user/update:
+  put:
+    summary: ユーザープロフィール更新
+    description: |
+      ログインユーザー自身のプロフィール情報（表示名、アバター画像、言語設定、テーマなど）を部分更新します。
+      テキストのみ、または画像ファイル等を含む場合は multipart/form-data で送信可能です。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/UserUpdateRequest'
+        multipart/form-data:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/UserUpdateRequestFormData'
+    responses:
+      '200':
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/UserUpdateResponse'
+            examples:
+              success:
+                value:
+                  state: success
+                  user:
+                    id: 1
+                    name: "新しい表示名"
+                    email: "user@example.com"
+                    avatar_url: "https://cdn.example.com/avatars/1.jpg"
+                    language: ja
+                    theme: dark
+                    updated_at: "2024-07-18T23:45:01"
+                    is_deleted: false
+                    is_verified: true
+                    created_at: "2024-01-01T00:00:00"
+                    last_login: "2024-07-18T12:34:56"
+                  message: "プロフィールを更新しました。"
+      '400':
+        description: バリデーションエラー等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/UserUpdateResponse'
+            examples:
+              error:
+                value:
+                  state: error
+                  user: null
+                  message: "Invalid profile data."
+      '401':
+        description: 未認証・権限なし

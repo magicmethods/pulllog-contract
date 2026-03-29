@@ -1,0 +1,292 @@
+/auth/login:
+  post:
+    summary: ユーザーログイン
+    description: |
+      メールアドレス・パスワードによるユーザー認証を行い、成功時にユーザー情報およびCSRFトークン等を返します。
+      Rememberオプションが有効な場合はRememberトークンも返却。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/LoginRequest'
+    responses:
+      '200':
+        description: ログイン成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/LoginResponse'
+      '401':
+        description: 認証エラー（メールアドレスまたはパスワード不正等）
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/LoginResponse'
+      '500':
+        description: サーバーエラー
+
+/auth/logout:
+  post:
+    summary: ユーザーログアウト
+    description: |
+      サーバー側のセッションを消去し、ログアウト状態にします。
+      クライアント側ではユーザー・CSRFトークン・アプリ等のキャッシュも削除推奨。
+    responses:
+      '200':
+        description: ログアウト成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              success:
+                value:
+                  success: true
+                  message: 'Logged out successfully.'
+      '500':
+        description: サーバーエラー
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              error:
+                value:
+                  success: false
+                  message: 'Logout failed due to server error.'
+
+/auth/register:
+  post:
+    summary: アカウント新規登録
+    description: |
+      ユーザー名・メールアドレス・パスワード・言語設定で新規ユーザーアカウントを登録します。
+      登録後、メール認証が完了するまでアカウントは無効状態となり、ログインは不可です。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/RegisterRequest'
+    responses:
+      '201':
+        description: 登録成功（メール認証待ち）
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/RegisterResponse'
+            examples:
+              success:
+                value:
+                  state: success
+                  message: 'Registration completed. Please verify your email.'
+      '400':
+        description: バリデーションエラー等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/RegisterResponse'
+            examples:
+              error:
+                value:
+                  state: error
+                  message: 'Email already in use or invalid data.'
+
+/auth/password:
+  post:
+    summary: パスワード再設定リクエスト
+    description: |
+      指定したメールアドレスにパスワード再設定用URL（認証コード付き）を送信します。
+      実際のパスワード再設定はメール経由で認証後に行います。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/PasswordResetRequest'
+    responses:
+      '200':
+        description: パスワード再設定メール送信成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/PasswordResetResponse'
+            examples:
+              success:
+                value:
+                  success: true
+                  message: 'A password reset link has been sent to your email address.'
+      '404':
+        description: メールアドレスが登録されていない場合等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/PasswordResetResponse'
+            examples:
+              notfound:
+                value:
+                  success: false
+                  message: 'No account found for this email address.'
+      '400':
+        description: バリデーションエラー等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/PasswordResetResponse'
+            examples:
+              invalid:
+                value:
+                  success: false
+                  message: 'Invalid email address.'
+  put:
+    summary: パスワード再設定・確定
+    description: |
+      メールで送付された認証トークン・認証コード・新しいパスワードを受け取り、パスワードを更新します。
+      typeは "reset"（パスワードリセット時）のみ受け付けます。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/PasswordUpdateRequest'
+    responses:
+      '200':
+        description: パスワード更新成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              success:
+                value:
+                  success: true
+                  message: 'Password updated successfully.'
+      '400':
+        description: トークン・認証コード・バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              invalid:
+                value:
+                  success: false
+                  message: 'Invalid or expired token/code.'
+      '404':
+        description: ユーザー・トークンが存在しない場合等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              notfound:
+                value:
+                  success: false
+                  message: 'User not found.'
+
+/auth/verify:
+  post:
+    summary: メール認証トークン受付
+    description: |
+      メール本文記載のトークンおよび認証種別（type: signup or reset）を受け取り、認証処理を行います。
+      認証に成功するとアカウントが有効化、またはパスワードリセット処理が進行します。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/VerifyTokenRequest'
+    responses:
+      '200':
+        description: 認証成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              success:
+                value:
+                  success: true
+                  message: 'Verification succeeded.'
+      '400':
+        description: 無効または期限切れトークン等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              invalid:
+                value:
+                  success: false
+                  message: 'Invalid or expired token.'
+      '404':
+        description: トークン対象のユーザーが存在しない場合等
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/VerifyResponse'
+            examples:
+              notfound:
+                value:
+                  success: false
+                  message: 'User not found.'
+
+/auth/autologin:
+  post:
+    summary: 自動ログイン
+    description: |
+      クライアントのCookieに保存されたRememberトークンを使用して自動ログイン処理を行います。
+      成功時は通常のログインと同様にユーザー情報やCSRFトークン等を返します。
+      ※リクエストボディは不要で、認証トークンはCookieで自動送信されます。
+    responses:
+      '200':
+        description: 自動ログイン成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/LoginResponse'
+            examples:
+              success:
+                value:
+                  state: success
+                  user:
+                    id: 1
+                    name: "サンプルユーザー"
+                    email: "user@example.com"
+                    is_deleted: false
+                    is_verified: true
+                    created_at: "2024-01-01T00:00:00"
+                    updated_at: "2024-01-01T00:00:00"
+                    last_login: "2024-07-18T12:34:56"
+                    language: ja
+                    theme: light
+                  csrfToken: "xxxxxx"
+                  rememberToken: "xxxxxx"
+      '401':
+        description: トークン無効または認証エラー
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/LoginResponse'
+            examples:
+              error:
+                value:
+                  state: error
+                  message: 'Invalid or expired token.'
+                  user: null
+                  csrfToken: null
+                  rememberToken: null
+      '400':
+        description: リクエスト不正（Cookie未送信など）
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/LoginResponse'
+            examples:
+              nocookie:
+                value:
+                  state: error
+                  message: 'No remember token found.'
+                  user: null
+                  csrfToken: null
+                  rememberToken: null

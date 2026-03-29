@@ -1,0 +1,18 @@
+{
+  "name": "pulllog-api-contract",
+  "version": "1.0.0",
+  "description": "PullLog API Contract - OpenAPI 3.0 Specification",
+  "scripts": {
+    "validate": "swagger-cli validate api-schema.yaml",
+    "validate:verbose": "swagger-cli validate api-schema.yaml --debug",
+    "bundle": "swagger-cli bundle api-schema.yaml --type yaml --outfile api-schema.bundle.yaml",
+    "bundle:json": "swagger-cli bundle api-schema.yaml --type json --outfile api-schema.bundle.json",
+    "validate:then:bundle": "npm run validate && npm run bundle && npm run bundle:json"
+  },
+  "devDependencies": {
+    "swagger-cli": "^4.0.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
