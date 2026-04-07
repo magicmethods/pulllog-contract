@@ -29,6 +29,12 @@ API スキーマの正本はこのディレクトリの `api-schema.yaml` です
 - 変更後は必ず `npm run validate` を実行する。
 - 配布物が必要な場合のみ `npm run bundle` / `npm run bundle:json` を実行する。
 
+## Repository Playwright E2E Reference
+- フロントエンド E2E アーキテクチャの正本は `../frontend/docs/architecture/e2e-test.md`、マニフェスト定義の正本は `../frontend/e2e/cases/case.schema.json`。
+- 規定プロジェクトマトリクスは `chromium` / `ipad-pro-11` / `iphone-14`。明示指定が必要な場合は frontend ワークスペースの既存スクリプトで `--project=chromium,ipad-pro-11,iphone-14` のようなカンマ区切り指定を優先する。
+- レポートテンプレートは `../frontend/e2e/templates/`、リポジトリ既定セットは `../frontend/e2e/templates/pulllog/`。グローバル切替は `../frontend/.env.e2e` の `PLAYWRIGHT_E2E_TEMPLATE_DIR` 等で管理する。
+- contract 変更で E2E へ影響する場合は、複数プロジェクト実行時の集約 Markdown レポートと PDF comparison table を前提に frontend 側の再検証対象を整理すること。
+
 ## Agent-Specific Notes
 - 本 AGENTS.md は `contract/` 配下に適用。
 
