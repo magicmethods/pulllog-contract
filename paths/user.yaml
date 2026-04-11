@@ -1,3 +1,36 @@
+/user:
+  get:
+    summary: ログインユーザー情報取得
+    description: |
+      現在ログイン中のユーザー情報を取得します。
+    security:
+      - CsrfAuth: []
+    responses:
+      '200':
+        description: ユーザー情報取得成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/UserUpdateResponse'
+      '401':
+        description: 未認証・権限なし
+
+  delete:
+    summary: ユーザーアカウント削除
+    description: |
+      ログインユーザー自身のアカウントを論理削除します。
+    security:
+      - CsrfAuth: []
+    responses:
+      '200':
+        description: 削除成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+      '401':
+        description: 未認証・権限なし
+
 /user/update:
   put:
     summary: ユーザープロフィール更新
@@ -51,3 +84,127 @@
                   message: "Invalid profile data."
       '401':
         description: 未認証・権限なし
+
+/user/avatar:
+  post:
+    summary: ユーザーアバター画像アップロード
+    description: |
+      ログインユーザーのアバター画像をアップロードし、保存後のURLを返します。
+    security:
+      - CsrfAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/AvatarUploadRequest'
+    responses:
+      '200':
+        description: アバター更新成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/AvatarUploadResponse'
+      '401':
+        description: 未認証・権限なし
+      '422':
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/AvatarUploadResponse'
+
+/user-filters/{context}:
+  get:
+    summary: ユーザーフィルタ設定取得
+    description: |
+      指定コンテキストのユーザーフィルタ設定を取得します。
+      未作成の場合はデフォルト設定を返します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: context
+        required: true
+        schema:
+          type: string
+          enum:
+            - stats
+            - apps
+            - history
+            - gallery
+        description: フィルタ設定のコンテキスト
+    responses:
+      '200':
+        description: フィルタ設定取得成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/UserFilterResponse'
+      '401':
+        description: 未認証・権限なし
+      '404':
+        description: 不明なコンテキスト
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+
+  put:
+    summary: ユーザーフィルタ設定更新
+    description: |
+      指定コンテキストのフィルタ設定を作成または更新します。
+      バージョンが競合した場合は最新値を返して 409 を返します。
+    security:
+      - CsrfAuth: []
+    parameters:
+      - in: path
+        name: context
+        required: true
+        schema:
+          type: string
+          enum:
+            - stats
+            - apps
+            - history
+            - gallery
+        description: フィルタ設定のコンテキスト
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/common.yaml#/components/schemas/UserFilterUpdateRequest'
+    responses:
+      '200':
+        description: 更新成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/UserFilterResponse'
+      '201':
+        description: 新規作成成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/UserFilterResponse'
+      '401':
+        description: 未認証・権限なし
+      '404':
+        description: 不明なコンテキスト
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+      '409':
+        description: バージョン競合
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/UserFilterConflictResponse'
+      '422':
+        description: バリデーションエラー
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'

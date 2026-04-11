@@ -211,3 +211,43 @@
                   message: "指定されたアプリIDは存在しません。"
       '401':
         description: 認証・CSRFトークン不備等
+
+/currencies:
+  get:
+    summary: 通貨一覧取得
+    description: |
+      通貨マスタを取得します。
+      `codes=USD,JPY` のように指定すると、一部の通貨だけを返します。
+      条件付きGETでは `ETag` / `Last-Modified` に基づいて `304 Not Modified` を返します。
+    parameters:
+      - in: query
+        name: codes
+        required: false
+        schema:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        description: 取得対象のISO 4217通貨コード（カンマ区切りまたは配列）
+      - in: header
+        name: If-None-Match
+        required: false
+        schema:
+          type: string
+        description: 前回応答のETag
+      - in: header
+        name: If-Modified-Since
+        required: false
+        schema:
+          type: string
+        description: 前回取得日時（RFC 7231）
+    responses:
+      '200':
+        description: 通貨一覧
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/CurrencyListResponse'
+      '304':
+        description: 前回取得内容から変更なし

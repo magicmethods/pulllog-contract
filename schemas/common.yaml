@@ -17,11 +17,162 @@ components:
           type: string
       required:
         - state
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: ISO 4217 通貨コード
+          example: JPY
+        name:
+          type: string
+          description: 通貨名
+        symbol:
+          type: string
+          description: 通貨記号
+        symbol_native:
+          type: string
+          description: ネイティブ通貨記号
+        minor_unit:
+          type: integer
+          description: 小数桁数
+        rounding:
+          type: integer
+          description: 丸め単位
+        name_plural:
+          type: string
+          description: 複数形の通貨名
+      required:
+        - code
+        - name
+        - symbol
+        - symbol_native
+        - minor_unit
+        - rounding
+        - name_plural
+    CurrencyListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Currency'
+      required:
+        - status
+        - data
+    UserFilterLayoutItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: レイアウト対象のタイルID
+        size:
+          type: string
+          description: タイルサイズ
+          example: span-2
+        visible:
+          type: boolean
+          description: タイルを表示するかどうか
+        locked:
+          type: boolean
+          description: レイアウト固定フラグ
+        order:
+          type: integer
+          minimum: 0
+          description: 表示順
+      required:
+        - id
+        - size
+        - visible
+        - locked
+        - order
+    UserFilterUpdateRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          maxLength: 20
+          description: レイアウトバージョン
+        layout:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserFilterLayoutItem'
+        filters:
+          type: object
+          additionalProperties: true
+          description: コンテキスト別の任意フィルタ設定
+      required:
+        - version
+        - layout
+    UserFilterResponse:
+      type: object
+      properties:
+        context:
+          type: string
+          enum:
+            - stats
+            - apps
+            - history
+            - gallery
+        version:
+          type: string
+        layout:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserFilterLayoutItem'
+        filters:
+          type: object
+          additionalProperties: true
+        created:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - context
+        - version
+        - layout
+        - filters
+        - created
+        - updatedAt
+    UserFilterConflictResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - error
+        message:
+          type: string
+        latestVersion:
+          type: string
+        payload:
+          $ref: '#/components/schemas/UserFilterUpdateRequest'
+      required:
+        - state
+        - message
+        - latestVersion
+        - payload
     StatsData:
       type: object
       properties:
         appId:
           type: string
+          description: 対象アプリのキー
+        currencyCode:
+          type: string
+          description: '通貨コード（例: JPY, USD）'
+        minorUnit:
+          type: integer
+          description: 通貨の最小単位
         startDate:
           type: string
           format: date
@@ -36,7 +187,8 @@ components:
           type: number
           format: float
         totalExpense:
-          type: integer
+          type: number
+          format: float
         averageExpense:
           type: number
           format: float
@@ -45,16 +197,19 @@ components:
           format: float
         totalLogs:
           type: integer
-          nullable: true
         monthsInPeriod:
           type: integer
-          nullable: true
         averageMonthlyExpense:
           type: number
           format: float
+        demo:
+          type: boolean
           nullable: true
+          description: デモユーザー集計かどうか
       required:
         - appId
+        - currencyCode
+        - minorUnit
         - startDate
         - endDate
         - totalPulls
@@ -63,3 +218,6 @@ components:
         - totalExpense
         - averageExpense
         - averageRareDropRate
+        - totalLogs
+        - monthsInPeriod
+        - averageMonthlyExpense

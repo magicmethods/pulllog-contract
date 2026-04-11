@@ -15,6 +15,18 @@ components:
         userId:
           type: integer
           description: 所有ユーザーID
+        appId:
+          type: integer
+          nullable: true
+          description: 紐付けアプリID
+        appKey:
+          type: string
+          nullable: true
+          description: 紐付けアプリのキー
+        appName:
+          type: string
+          nullable: true
+          description: 紐付けアプリ名
         logId:
           type: integer
           nullable: true
@@ -27,24 +39,32 @@ components:
           description: オリジナルファイルのパス
         url:
           type: string
+          format: uri
           nullable: true
-          description: オリジナルファイルの参照URL（非公開時は null の可能性あり）
+          description: 署名付きのオリジナルファイル取得URL（非公開資産のみ）
+        publicUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: 公開資産用の短縮URL
         thumbSmall:
           type: string
           nullable: true
           description: 小サイズサムネイルのパス
         thumbSmallUrl:
           type: string
+          format: uri
           nullable: true
-          description: 小サイズサムネイルのURL
+          description: 小サイズサムネイルの取得URL
         thumbLarge:
           type: string
           nullable: true
           description: 大サイズサムネイルのパス
         thumbLargeUrl:
           type: string
+          format: uri
           nullable: true
-          description: 大サイズサムネイルのURL
+          description: 大サイズサムネイルの取得URL
         mime:
           type: string
           description: MIMEタイプ
@@ -113,6 +133,13 @@ components:
         - visibility
         - createdAt
         - updatedAt
+    GalleryAssetResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GalleryAsset'
+      required:
+        - data
     GalleryAssetUploadRequest:
       type: object
       properties:
@@ -124,6 +151,10 @@ components:
           type: integer
           nullable: true
           description: 紐付けるログID
+        app_key:
+          type: string
+          nullable: true
+          description: 紐付けるアプリのキー
         title:
           type: string
           nullable: true
@@ -147,6 +178,91 @@ components:
             - public
       required:
         - file
+    GalleryUploadTicketRequest:
+      type: object
+      properties:
+        fileName:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: アップロード予定ファイル名
+        expectedBytes:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: 想定ファイルサイズ（バイト）
+        mime:
+          type: string
+          nullable: true
+          description: 想定MIMEタイプ
+        visibility:
+          type: string
+          nullable: true
+          enum:
+            - private
+            - unlisted
+            - public
+        logId:
+          type: integer
+          nullable: true
+          description: 紐付けるログID
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 20
+        appKey:
+          type: string
+          nullable: true
+          description: 紐付けるアプリのキー
+    GalleryUploadTicketHeaders:
+      type: object
+      properties:
+        x-upload-token:
+          type: string
+          description: 実アップロード時に送るワンタイムトークン
+      required:
+        - x-upload-token
+    GalleryUploadTicketResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+          description: 実アップロード先のAPI URL
+        token:
+          type: string
+          description: 発行されたワンタイムトークン
+        expiresAt:
+          type: string
+          format: date-time
+          description: チケット有効期限
+        maxBytes:
+          type: integer
+          description: このチケットで許可される最大アップロードサイズ
+        allowedMimeTypes:
+          type: array
+          items:
+            type: string
+        headers:
+          $ref: '#/components/schemas/GalleryUploadTicketHeaders'
+        meta:
+          type: object
+          additionalProperties: true
+          description: 発行時の付帯メタデータ
+        appId:
+          type: integer
+          nullable: true
+          description: 解決済みのアプリID
+      required:
+        - uploadUrl
+        - token
+        - expiresAt
+        - maxBytes
+        - allowedMimeTypes
+        - headers
+        - meta
+        - appId
     GalleryAssetUpdateRequest:
       type: object
       properties:

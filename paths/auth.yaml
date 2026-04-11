@@ -262,6 +262,7 @@
                     theme: light
                   csrfToken: "xxxxxx"
                   rememberToken: "xxxxxx"
+                  rememberTokenExpires: "2026-05-11T12:34:56Z"
       '401':
         description: トークン無効または認証エラー
         content:
@@ -285,8 +286,79 @@
             examples:
               nocookie:
                 value:
-                  state: error
+                  state: warn
                   message: 'No remember token found.'
                   user: null
                   csrfToken: null
                   rememberToken: null
+
+/auth/csrf/refresh:
+  post:
+    summary: CSRFトークン再発行
+    description: |
+      Remember Meトークンでユーザーを再確認し、期限切れのCSRFトークンを新しいトークンへ更新します。
+      RememberトークンはCookie・`x-remember-token` ヘッダ・JSONボディのいずれでも送信できます。
+    parameters:
+      - in: header
+        name: x-remember-token
+        required: false
+        schema:
+          type: string
+        description: Remember Meトークン
+      - in: header
+        name: x-csrf-token
+        required: false
+        schema:
+          type: string
+        description: 期限切れのCSRFトークン
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/CsrfRefreshRequest'
+    responses:
+      '200':
+        description: CSRFトークン再発行成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/CsrfRefreshResponse'
+      '401':
+        description: RememberトークンまたはCSRFトークンが無効
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+      '404':
+        description: ユーザーが見つからない
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/common.yaml#/components/schemas/DeleteResponse'
+
+/auth/google/exchange:
+  post:
+    summary: Google OAuth コード交換
+    description: |
+      Google OAuth の認可コードをアクセストークン/IDトークンと交換し、PullLogユーザーへログインします。
+      成功時は通常ログインと同じユーザー情報・CSRFトークン・Rememberトークンを返します。
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../schemas/auth.yaml#/components/schemas/GoogleExchangeRequest'
+    responses:
+      '200':
+        description: ログイン成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/LoginResponse'
+      '400':
+        description: バリデーションエラーまたはOAuth交換失敗
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas/auth.yaml#/components/schemas/LoginResponse'

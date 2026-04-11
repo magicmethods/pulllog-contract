@@ -32,13 +32,16 @@ components:
           enum:
             - success
             - error
+            - warn
           description: レスポンス状態
         message:
           type: string
           nullable: true
           description: エラー時または補足時のメッセージ
         user:
-          $ref: '#/components/schemas/UserResponse'
+          allOf:
+            - $ref: '#/components/schemas/UserResponse'
+          nullable: true
         csrfToken:
           type: string
           nullable: true
@@ -47,9 +50,56 @@ components:
           type: string
           nullable: true
           description: Remember Meトークン（開発・Remember=true時のみ）
+        rememberTokenExpires:
+          type: string
+          format: date-time
+          nullable: true
+          description: Remember Meトークンの有効期限
       required:
         - state
-        - user
+    CsrfRefreshRequest:
+      type: object
+      properties:
+        remember_token:
+          type: string
+          description: Remember Meトークン。Cookieまたは x-remember-token ヘッダでも指定可能
+        expired_csrf_token:
+          type: string
+          description: 期限切れのCSRFトークン。x-csrf-token ヘッダでも指定可能
+    CsrfRefreshResponse:
+      type: object
+      properties:
+        csrfToken:
+          type: string
+          description: 再発行されたCSRFトークン
+        expiresAt:
+          type: string
+          format: date-time
+          description: 新しいトークンの有効期限
+      required:
+        - csrfToken
+        - expiresAt
+    GoogleExchangeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Google OAuth 認可コード
+        code_verifier:
+          type: string
+          description: PKCE code verifier
+        redirect_uri:
+          type: string
+          format: uri
+          description: Google 側に登録済みのリダイレクトURI
+        remember:
+          type: boolean
+          default: true
+          description: Remember Me を有効にするか
+      required:
+        - code
+        - code_verifier
+        - redirect_uri
     RegisterRequest:
       type: object
       properties:
@@ -129,6 +179,7 @@ components:
           example: light
         home_page:
           type: string
+          nullable: true
           description: ログイン後のホームページ
           example: /dashboard
         created_at:
@@ -142,12 +193,12 @@ components:
         last_login:
           type: string
           format: date-time
+          nullable: true
           description: 最終ログイン日時
         last_login_ip:
           type: string
-          format: ipv4
           nullable: true
-          description: 最終ログインIPアドレス
+          description: 最終ログインIPアドレス（IPv4/IPv6）
         last_login_user_agent:
           type: string
           nullable: true
@@ -195,6 +246,14 @@ components:
           type: integer
         maxStorage:
           type: integer
+        maxGallery:
+          type: integer
+        maxUploadPerFile:
+          type: integer
+        externalStorageAllowed:
+          type: boolean
+        transcodeWebp:
+          type: boolean
       description: ユーザーの各種プラン上限値（動的キーも許可）
       additionalProperties: true
     PasswordResetRequest:
@@ -272,7 +331,10 @@ components:
         name:
           type: string
           description: 新しい表示名
-        avatar_url:
+        password:
+          type: string
+          description: 新しいパスワード（変更する場合のみ）
+        avatarUrl:
           type: string
           format: uri
           description: アバター画像URL（画像アップロード済みの場合）
@@ -282,15 +344,25 @@ components:
         theme:
           type: string
           description: テーマ設定（light, dark など）
+        homePage:
+          type: string
+          description: ログイン後のホーム画面
       additionalProperties: true
+      required:
+        - name
+        - language
+        - theme
       description: |
-        ユーザー情報の部分更新（必要な項目のみ送信）
+        ユーザー情報の更新リクエスト。バックエンド実装では `name`、`language`、`theme` が必須です。
     UserUpdateRequestFormData:
       type: object
       properties:
         name:
           type: string
           description: 新しい表示名
+        password:
+          type: string
+          description: 新しいパスワード（変更する場合のみ）
         avatar:
           type: string
           format: binary
@@ -301,7 +373,14 @@ components:
         theme:
           type: string
           description: テーマ設定
+        homePage:
+          type: string
+          description: ログイン後のホーム画面
       additionalProperties: true
+      required:
+        - name
+        - language
+        - theme
       description: |
         multipart/form-dataで送信する場合のフォームデータ定義
     UserUpdateResponse:
@@ -314,8 +393,42 @@ components:
             - error
         message:
           type: string
+          nullable: true
         user:
-          $ref: '#/components/schemas/UserResponse'
+          allOf:
+            - $ref: '#/components/schemas/UserResponse'
+          nullable: true
+      required:
+        - state
+    AvatarUploadRequest:
+      type: object
+      properties:
+        avatar:
+          type: string
+          format: binary
+          description: アップロードする画像ファイル（最大1MB）
+      required:
+        - avatar
+    AvatarUploadResponse:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - success
+            - error
+        message:
+          type: string
+          nullable: true
+        user:
+          type: object
+          nullable: true
+          properties:
+            avatarUrl:
+              type: string
+              format: uri
+              nullable: true
+              description: 保存後のアバター画像URL
       required:
         - state
         - user

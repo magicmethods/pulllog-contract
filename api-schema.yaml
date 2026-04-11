@@ -31,6 +31,12 @@ paths:
     $ref: './paths/auth.yaml#/~1auth~1verify'
   /auth/autologin:
     $ref: './paths/auth.yaml#/~1auth~1autologin'
+  /auth/csrf/refresh:
+    $ref: './paths/auth.yaml#/~1auth~1csrf~1refresh'
+  /auth/google/exchange:
+    $ref: './paths/auth.yaml#/~1auth~1google~1exchange'
+  /currencies:
+    $ref: './paths/apps.yaml#/~1currencies'
   /apps:
     $ref: './paths/apps.yaml#/~1apps'
   /apps/{appId}:
@@ -43,12 +49,22 @@ paths:
     $ref: './paths/logs.yaml#/~1logs~1import~1{appId}'
   /stats/{appId}:
     $ref: './paths/logs.yaml#/~1stats~1{appId}'
+  /user:
+    $ref: './paths/user.yaml#/~1user'
   /user/update:
     $ref: './paths/user.yaml#/~1user~1update'
+  /user/avatar:
+    $ref: './paths/user.yaml#/~1user~1avatar'
+  /user-filters/{context}:
+    $ref: './paths/user.yaml#/~1user-filters~1{context}'
+  /gallery/assets/upload-ticket:
+    $ref: './paths/gallery.yaml#/~1gallery~1assets~1upload-ticket'
   /gallery/assets:
     $ref: './paths/gallery.yaml#/~1gallery~1assets'
   /gallery/assets/{assetId}:
     $ref: './paths/gallery.yaml#/~1gallery~1assets~1{assetId}'
+  /gallery/assets/{assetId}/content:
+    $ref: './paths/gallery.yaml#/~1gallery~1assets~1{assetId}~1content'
   /gallery/usage:
     $ref: './paths/gallery.yaml#/~1gallery~1usage'
 
@@ -59,6 +75,12 @@ components:
       $ref: './schemas/auth.yaml#/components/schemas/LoginRequest'
     LoginResponse:
       $ref: './schemas/auth.yaml#/components/schemas/LoginResponse'
+    CsrfRefreshRequest:
+      $ref: './schemas/auth.yaml#/components/schemas/CsrfRefreshRequest'
+    CsrfRefreshResponse:
+      $ref: './schemas/auth.yaml#/components/schemas/CsrfRefreshResponse'
+    GoogleExchangeRequest:
+      $ref: './schemas/auth.yaml#/components/schemas/GoogleExchangeRequest'
     RegisterRequest:
       $ref: './schemas/auth.yaml#/components/schemas/RegisterRequest'
     RegisterResponse:
@@ -83,6 +105,10 @@ components:
       $ref: './schemas/auth.yaml#/components/schemas/UserUpdateRequestFormData'
     UserUpdateResponse:
       $ref: './schemas/auth.yaml#/components/schemas/UserUpdateResponse'
+    AvatarUploadRequest:
+      $ref: './schemas/auth.yaml#/components/schemas/AvatarUploadRequest'
+    AvatarUploadResponse:
+      $ref: './schemas/auth.yaml#/components/schemas/AvatarUploadResponse'
 
     # アプリ
     AppData:
@@ -101,8 +127,16 @@ components:
     # ギャラリー
     GalleryAsset:
       $ref: './schemas/gallery.yaml#/components/schemas/GalleryAsset'
+    GalleryAssetResponse:
+      $ref: './schemas/gallery.yaml#/components/schemas/GalleryAssetResponse'
     GalleryAssetUploadRequest:
       $ref: './schemas/gallery.yaml#/components/schemas/GalleryAssetUploadRequest'
+    GalleryUploadTicketRequest:
+      $ref: './schemas/gallery.yaml#/components/schemas/GalleryUploadTicketRequest'
+    GalleryUploadTicketHeaders:
+      $ref: './schemas/gallery.yaml#/components/schemas/GalleryUploadTicketHeaders'
+    GalleryUploadTicketResponse:
+      $ref: './schemas/gallery.yaml#/components/schemas/GalleryUploadTicketResponse'
     GalleryAssetUpdateRequest:
       $ref: './schemas/gallery.yaml#/components/schemas/GalleryAssetUpdateRequest'
     GalleryAssetListResponse:
@@ -117,6 +151,18 @@ components:
     # 共通
     DeleteResponse:
       $ref: './schemas/common.yaml#/components/schemas/DeleteResponse'
+    Currency:
+      $ref: './schemas/common.yaml#/components/schemas/Currency'
+    CurrencyListResponse:
+      $ref: './schemas/common.yaml#/components/schemas/CurrencyListResponse'
+    UserFilterLayoutItem:
+      $ref: './schemas/common.yaml#/components/schemas/UserFilterLayoutItem'
+    UserFilterUpdateRequest:
+      $ref: './schemas/common.yaml#/components/schemas/UserFilterUpdateRequest'
+    UserFilterResponse:
+      $ref: './schemas/common.yaml#/components/schemas/UserFilterResponse'
+    UserFilterConflictResponse:
+      $ref: './schemas/common.yaml#/components/schemas/UserFilterConflictResponse'
     StatsData:
       $ref: './schemas/common.yaml#/components/schemas/StatsData'
 
