@@ -1,123 +1,147 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "OpenAPI: 依存関係インストール",
-      "type": "shell",
-      "command": "npm",
-      "args": ["install"],
-      "options": {
-        "cwd": "${workspaceFolder:contract}"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "group": "swagger"
-      }
-    },
-    {
-      "label": "OpenAPI: スキーマ検証",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "validate"],
-      "options": {
-        "cwd": "${workspaceFolder:contract}"
-      },
-      "dependsOn": "OpenAPI: 依存関係インストール",
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "group": "swagger"
-      },
-      "runOptions": {
-        "runOn": "folderOpen"
-      }
-    },
-    {
-      "label": "OpenAPI: スキーマ検証（詳細）",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "validate:verbose"],
-      "options": {
-        "cwd": "${workspaceFolder:contract}"
-      },
-      "dependsOn": "OpenAPI: 依存関係インストール",
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "group": "swagger"
-      }
-    },
-    {
-      "label": "OpenAPI: スキーマをバンドル（YAML）",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "bundle"],
-      "options": {
-        "cwd": "${workspaceFolder:contract}"
-      },
-      "dependsOn": "OpenAPI: スキーマ検証",
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "group": "swagger"
-      }
-    },
-    {
-      "label": "OpenAPI: スキーマをバンドル（JSON）",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "bundle:json"],
-      "options": {
-        "cwd": "${workspaceFolder:contract}"
-      },
-      "dependsOn": "OpenAPI: スキーマ検証",
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "group": "swagger"
-      }
-    },
-    {
-      "label": "OpenAPI: 検証 → バンドル（YAML + JSON）",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "validate:then:bundle"],
-      "options": {
-        "cwd": "${workspaceFolder:contract}"
-      },
-      "dependsOn": "OpenAPI: 依存関係インストール",
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "group": "swagger"
-      }
-    },
-    {
-      "label": "制御: フォーカスをスキーマ検証パネルに",
-      "type": "shell",
-      "command": "echo '✓ 検証パネルにフォーカスしました'",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "group": "swagger"
-      },
-      "runOptions": {
-        "instanceLimit": 1
-      },
-      "isBackground": true
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "OpenAPI: Install dependencies",
+			"detail": "OpenAPI 検証用の npm 依存関係をインストールします。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Validate schema",
+			"detail": "OpenAPI スキーマの整合性を検証します。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"validate"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Install dependencies",
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Validate schema (verbose)",
+			"detail": "OpenAPI スキーマを詳細ログ付きで検証します。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"validate:verbose"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Install dependencies",
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Bundle schema (YAML)",
+			"detail": "OpenAPI スキーマを YAML としてバンドル出力します。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"bundle"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Validate schema",
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Bundle schema (JSON)",
+			"detail": "OpenAPI スキーマを JSON としてバンドル出力します。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"bundle:json"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Validate schema",
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Validate and bundle",
+			"detail": "スキーマ検証から YAML / JSON バンドルまで一括実行します。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"validate:then:bundle"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Install dependencies",
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Detect drift (frontend)",
+			"detail": "frontend ワークスペースの API 実装と contract の差分を検出します。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"drift:frontend"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Install dependencies",
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Detect drift (backend stable)",
+			"detail": "backend/stable の API 実装と contract の差分を検出します。beta は無視されます。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"drift:backend"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Install dependencies",
+			"problemMatcher": []
+		},
+		{
+			"label": "OpenAPI: Detect drift (all)",
+			"detail": "frontend + backend/stable を横断して API 仕様との差分を検出します。",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"drift:all"
+			],
+			"options": {
+				"cwd": "${workspaceFolder:contract}"
+			},
+			"dependsOn": "OpenAPI: Install dependencies",
+			"problemMatcher": []
+		},
+		{
+			"label": "noop",
+			"type": "shell",
+			"command": "echo",
+			"args": [
+				"noop"
+			],
+			"isBackground": false
+		}
+	]
 }

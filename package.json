@@ -7,7 +7,12 @@
     "validate:verbose": "swagger-cli validate api-schema.yaml --debug",
     "bundle": "swagger-cli bundle api-schema.yaml --type yaml --outfile api-schema.bundle.yaml",
     "bundle:json": "swagger-cli bundle api-schema.yaml --type json --outfile api-schema.bundle.json",
-    "validate:then:bundle": "npm run validate && npm run bundle && npm run bundle:json"
+    "validate:then:bundle": "npm run validate && npm run bundle && npm run bundle:json",
+    "drift:frontend": "node scripts/detect-api-drift.mjs --source frontend --format md",
+    "drift:backend": "node scripts/detect-api-drift.mjs --source backend --format md",
+    "drift:all": "node scripts/detect-api-drift.mjs --source all --format md",
+    "drift:json": "node scripts/detect-api-drift.mjs --source all --format json",
+    "drift:ci": "node scripts/detect-api-drift.mjs --source all --format md --fail-on-drift"
   },
   "devDependencies": {
     "swagger-cli": "^4.0.4"
