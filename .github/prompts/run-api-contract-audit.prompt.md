@@ -1,8 +1,8 @@
 ---
 description: "Run the PullLog API contract audit workflow from one prompt. Starts drift detection, reviews frontend and stable backend evidence, and prepares a human-approval-ready change plan."
-name: "Run API contract audit"
+name: "Start Contract Audit Workflow"
 argument-hint: "Optional scope or focus, e.g. 'all', 'frontend only', 'review /gallery and /user'"
-agent: "contract-audit-orchestrator"
+agent: "contract-orch-audit"
 ---
 Run the PullLog API contract audit workflow for the requested scope.
 

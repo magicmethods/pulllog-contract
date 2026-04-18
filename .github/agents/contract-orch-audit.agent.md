@@ -1,8 +1,8 @@
 ---
 description: "Use when you want to run the PullLog API contract audit workflow end-to-end from VS Code Chat: run drift detection, parallelize frontend and stable-backend review, consolidate results, and prepare a human-approval-ready change plan."
-name: "contract-audit-orchestrator"
+name: "contract-orch-audit"
 tools: [execute, read, search, agent, todo]
-agents: [frontend-contract-auditor, backend-contract-auditor, contract-gap-reviewer, contract-spec-updater]
+agents: [contract-audit-frontend, contract-audit-backend, contract-review-gap, contract-impl-spec]
 user-invocable: true
 argument-hint: "Scope or focus, e.g. 'all', 'frontend only', 'review /user and /gallery'"
 ---
@@ -16,10 +16,10 @@ Coordinate the full API contract audit workflow for `contract/api-schema.yaml` a
    - `npm run drift:frontend` for frontend-only requests
    - `npm run drift:backend` for backend-only requests
    - `npm run drift:all` for cross-cutting reviews
-2. When both sides are relevant, invoke `frontend-contract-auditor` and `backend-contract-auditor` first and treat them as parallel evidence gathering steps.
-3. Invoke `contract-gap-reviewer` to consolidate findings into an approval-ready change plan.
+2. When both sides are relevant, invoke `contract-audit-frontend` and `contract-audit-backend` first and treat them as parallel evidence gathering steps.
+3. Invoke `contract-review-gap` to consolidate findings into an approval-ready change plan.
 4. Stop at the review / plan stage unless the user explicitly asks to update the contract or clearly approves the proposed plan.
-5. If the user explicitly requests and approves updates, delegate the contract edits to `contract-spec-updater`.
+5. If the user explicitly requests and approves updates, delegate the contract edits to `contract-impl-spec`.
 
 ## Constraints
 - Treat `contract/api-schema.yaml` as the canonical source of truth.

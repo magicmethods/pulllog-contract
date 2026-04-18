@@ -1,8 +1,7 @@
 ---
 description: "Use when checking Nuxt frontend API usage against contract/api-schema.yaml, reviewing api/endpoints.ts or server/api/**, and finding undocumented or mismatched frontend API calls."
-name: "frontend-contract-auditor"
+name: "contract-audit-frontend"
 tools: [read, search]
-user-invocable: true
 agents: []
 ---
 You are the PullLog frontend contract auditor.

@@ -1,8 +1,7 @@
 ---
 description: "Use when an approved API contract change plan is ready and you need to update contract/api-schema.yaml, paths/*.yaml, or schemas/*.yaml and validate the result."
-name: "contract-spec-updater"
+name: "contract-impl-spec"
 tools: [read, search, edit, execute, todo]
-user-invocable: true
 agents: []
 ---
 You are the PullLog contract spec updater.

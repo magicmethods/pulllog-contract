@@ -19,11 +19,11 @@
 
 | ファイル | 役割 |
 | --- | --- |
-| `.github/agents/contract-audit-orchestrator.agent.md` | 親オーケストレータ。drift check → 監査 → 統合レビューの起点 |
-| `.github/agents/frontend-contract-auditor.agent.md` | `frontend/` の API 利用実装を監査 |
-| `.github/agents/backend-contract-auditor.agent.md` | `backend/stable/` の API 実装を監査 |
-| `.github/agents/contract-gap-reviewer.agent.md` | 上記 2 つの監査結果を統合し、変更計画を作成 |
-| `.github/agents/contract-spec-updater.agent.md` | 承認済み change plan に基づいて `contract/` を更新 |
+| `.github/agents/contract-orch-audit.agent.md` | `contract-orch-audit`。drift check → 監査 → 統合レビューの起点 |
+| `.github/agents/contract-audit-frontend.agent.md` | `contract-audit-frontend`。`frontend/` の API 利用実装を監査 |
+| `.github/agents/contract-audit-backend.agent.md` | `contract-audit-backend`。`backend/stable/` の API 実装を監査 |
+| `.github/agents/contract-review-gap.agent.md` | `contract-review-gap`。上記 2 つの監査結果を統合し、変更計画を作成 |
+| `.github/agents/contract-impl-spec.agent.md` | `contract-impl-spec`。承認済み change plan に基づいて `contract/` を更新 |
 
 ### 補助スクリプト
 
@@ -44,8 +44,8 @@
    - この段階では **エージェントは起動しない**
 
 2. **エージェントレビュー**
-   - VS Code Chat で `contract-gap-reviewer` を呼び出す
-   - 必要に応じて `frontend-contract-auditor` / `backend-contract-auditor` を併用する
+   - VS Code Chat で `contract-orch-audit` または prompt の `Start Contract Audit Workflow` を起点にする
+   - 必要に応じて orchestrator が `contract-audit-frontend` / `contract-audit-backend` を併用する
    - 差分を `missing-in-contract` / `schema-mismatch` / `human-decision-required` に整理
 
 3. **人手承認**
@@ -53,7 +53,7 @@
    - 一時実装や誤検知をここで除外
 
 4. **契約更新**
-   - `contract-spec-updater` が `paths/*.yaml`, `schemas/*.yaml`, `api-schema.yaml` を最小差分で更新
+   - `contract-impl-spec` が `paths/*.yaml`, `schemas/*.yaml`, `api-schema.yaml` を最小差分で更新
 
 5. **検証**
    - `npm run validate`
@@ -66,11 +66,10 @@
 現在の実装は次の分離です。
 
 - `npm run drift:all` = **決定論的な差分抽出のみ**
-- `frontend-contract-auditor` / `backend-contract-auditor` = **Chat 上の監査レビュー**
-- `contract-gap-reviewer` = **差分統合と change plan 作成**
+- `contract-audit-frontend` / `contract-audit-backend` = **Chat 上の監査レビュー**
+- `contract-review-gap` = **差分統合と change plan 作成**
 
-必要であれば今後、`contract-gap-reviewer` を親オーケストレータとして強化し、
-「監査を先に並列実行 → 結果統合 → human approval 用まとめ」の流れをより自動化できます。
+`contract-orch-audit` を入口にし、通常は specialist agent を直接選ばず、必要な場合だけ orchestrator から委譲します。
 
 ---
 
@@ -102,11 +101,9 @@
 
 ### 代表的な依頼例
 
-- `contract-audit-orchestrator` に「contract 監査フローを一括実行して」と依頼する
-- `frontend-contract-auditor` に「frontend 実装と contract の差分を監査して」と依頼する
-- `backend-contract-auditor` に「stable Laravel 実装との差分を洗い出して」と依頼する
-- `contract-gap-reviewer` に「安全に反映できる change plan をまとめて」と依頼する
-- `contract-spec-updater` に「承認済み change plan に従って contract を更新して」と依頼する
+- prompt の `Start Contract Audit Workflow` から開始する
+- `contract-orch-audit` に「contract 監査フローを一括実行して」と依頼する
+- 必要時のみ `contract-audit-frontend` / `contract-audit-backend` / `contract-review-gap` / `contract-impl-spec` を個別利用する
 
 ### 判断基準
 

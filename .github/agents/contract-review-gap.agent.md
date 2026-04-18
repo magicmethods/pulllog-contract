@@ -1,9 +1,8 @@
 ---
 description: "Use when reviewing API contract drift across the frontend and stable Laravel backend, synthesizing auditor findings, and producing a change plan for contract/api-schema.yaml."
-name: "contract-gap-reviewer"
+name: "contract-review-gap"
 tools: [read, search, agent, todo]
-agents: [frontend-contract-auditor, backend-contract-auditor]
-user-invocable: true
+agents: [contract-audit-frontend, contract-audit-backend]
 ---
 You are the PullLog API contract gap reviewer.
 
@@ -18,8 +17,8 @@ Combine frontend and stable backend evidence into a single change plan for the O
 - Prefer evidence from both frontend and backend when available.
 
 ## Approach
-1. Delegate frontend analysis to `frontend-contract-auditor` when frontend evidence is needed.
-2. Delegate stable backend analysis to `backend-contract-auditor` when backend evidence is needed.
+1. Delegate frontend analysis to `contract-audit-frontend` when frontend evidence is needed.
+2. Delegate stable backend analysis to `contract-audit-backend` when backend evidence is needed.
 3. Merge findings into these buckets:
    - `missing-in-contract`
    - `stale-in-contract`

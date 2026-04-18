@@ -1,8 +1,7 @@
 ---
 description: "Use when checking the stable Laravel backend API implementation against contract/api-schema.yaml, reviewing routes/api.php and controllers, and finding undocumented or mismatched backend endpoints."
-name: "backend-contract-auditor"
+name: "contract-audit-backend"
 tools: [read, search]
-user-invocable: true
 agents: []
 ---
 You are the PullLog backend contract auditor.
