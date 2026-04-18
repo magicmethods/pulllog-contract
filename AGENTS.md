@@ -3,6 +3,11 @@
 本ドキュメントは `contract/`（OpenAPI 契約管理）向けの作業ガイドです。
 API スキーマの正本はこのディレクトリの `api-schema.yaml` です。
 
+## Terminology Policy
+- PullLog 全体は `workspace`、`contract/` など各トップレベルディレクトリは `subproject` と呼ぶ。
+- 正式な定義は `../pulllog-docs/docs/workspace-terminology.md` を参照する。
+- VS Code 機能の説明では `workspace` / `workspace folder`、pnpm の説明では `pnpm workspace` など公式用語を優先する。
+
 ## Project Structure
 - `api-schema.yaml`: エントリーポイント（paths/schemas への外部参照インデックス）
 - `paths/`: エンドポイント定義
