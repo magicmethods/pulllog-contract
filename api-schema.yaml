@@ -59,6 +59,8 @@ paths:
     $ref: './paths/user.yaml#/~1user-filters~1{context}'
   /gallery/assets/upload-ticket:
     $ref: './paths/gallery.yaml#/~1gallery~1assets~1upload-ticket'
+  /gallery/bootstrap:
+    $ref: './paths/gallery.yaml#/~1gallery~1bootstrap'
   /gallery/assets:
     $ref: './paths/gallery.yaml#/~1gallery~1assets'
   /gallery/assets/{assetId}:
@@ -143,6 +145,10 @@ components:
       $ref: './schemas/gallery.yaml#/components/schemas/GalleryAssetListResponse'
     GalleryUsageResponse:
       $ref: './schemas/gallery.yaml#/components/schemas/GalleryUsageResponse'
+    GalleryBootstrapData:
+      $ref: './schemas/gallery.yaml#/components/schemas/GalleryBootstrapData'
+    GalleryBootstrapResponse:
+      $ref: './schemas/gallery.yaml#/components/schemas/GalleryBootstrapResponse'
     PaginationLinks:
       $ref: './schemas/gallery.yaml#/components/schemas/PaginationLinks'
     PaginationMeta:
@@ -169,3 +175,5 @@ components:
   securitySchemes:
     CsrfAuth:
       $ref: './schemas/security.yaml#/components/securitySchemes/CsrfAuth'
+    ApiKeyAuth:
+      $ref: './schemas/security.yaml#/components/securitySchemes/ApiKeyAuth'

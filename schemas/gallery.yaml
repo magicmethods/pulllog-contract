@@ -306,6 +306,31 @@ components:
         - data
         - links
         - meta
+    GalleryBootstrapData:
+      type: object
+      properties:
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/GalleryAsset'
+        usage:
+          $ref: '#/components/schemas/GalleryUsageResponse'
+      required:
+        - assets
+        - usage
+    GalleryBootstrapResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GalleryBootstrapData'
+        links:
+          $ref: '#/components/schemas/PaginationLinks'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+      required:
+        - data
+        - links
+        - meta
     GalleryUsageResponse:
       type: object
       properties:
